@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.urls import reverse
 
-from .models import Libro
+from .models import Editorial, FichaLibro, Libro, Prestamo, Socio
 
 
 class LibroViewsTests(TestCase):
@@ -27,3 +27,34 @@ class LibroViewsTests(TestCase):
 
         self.assertRedirects(response, reverse("lista_libros"))
         self.assertTrue(Libro.objects.filter(titulo="Persistencia con SQLite").exists())
+
+
+class RelacionesViewsTests(TestCase):
+    def setUp(self):
+        self.editorial = Editorial.objects.create(nombre="Editorial de prueba")
+        self.socio = Socio.objects.create(nombre="Socio de prueba", correo="socio@test.local")
+        self.libro = Libro.objects.create(
+            titulo="Relaciones con Django",
+            autor="Autor de prueba",
+            categoria="Tecnologia",
+            editorial=self.editorial,
+        )
+        FichaLibro.objects.create(libro=self.libro, ubicacion="Sala C")
+
+    def test_relaciones_optimizadas_muestran_datos(self):
+        self.assertEqual(self.client.get(reverse("relaciones_select")).status_code, 200)
+        self.assertEqual(self.client.get(reverse("relaciones_prefetch")).status_code, 200)
+
+    def test_crud_del_modelo_intermedio(self):
+        response = self.client.post(reverse("crear_prestamo"), {
+            "libro": self.libro.id,
+            "socio": self.socio.id,
+            "fecha_prestamo": "2026-09-13",
+            "fecha_devolucion": "",
+            "estado": "Activo",
+        })
+
+        self.assertRedirects(response, reverse("lista_prestamos"))
+        prestamo = Prestamo.objects.get(libro=self.libro, socio=self.socio)
+        self.assertEqual(self.client.get(reverse("editar_prestamo", args=[prestamo.id])).status_code, 200)
+        self.assertEqual(self.client.get(reverse("eliminar_prestamo", args=[prestamo.id])).status_code, 200)

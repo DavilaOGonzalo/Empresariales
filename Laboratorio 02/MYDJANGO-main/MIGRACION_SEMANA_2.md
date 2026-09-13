@@ -21,6 +21,11 @@ iniciales y se perdian los libros registrados durante la ejecucion anterior.
 El formulario se convirtio en `ModelForm` y usa `form.save()` para registrar o
 editar libros.
 
+En la Semana 4 se amplió el mismo modelo sin eliminar sus campos existentes:
+se agregaron `Editorial`, `Socio`, `FichaLibro` y `Prestamo`. Las migraciones
+`0003_editorial_socio_libro_editorial_fichalibro_prestamo_and_more` y
+`0004_datos_relaciones_iniciales` incorporan las relaciones y datos de prueba.
+
 La vista de listado usa `Libro.objects.all()` y filtros ORM. Las otras vistas
 usan `get_object_or_404`, `save` y `delete`. Se generaron las migraciones
 `0001_initial` (tabla `library_libro`) y `0002_cargar_libros_iniciales`

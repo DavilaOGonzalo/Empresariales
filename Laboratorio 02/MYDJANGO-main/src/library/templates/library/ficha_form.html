@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Ficha del libro{% endblock %}
+
+{% block content %}
+<style>
+    @import url('{% static "library/css/style.css" %}');
+</style>
+
+<h2>Ficha 1:1 de {{ libro.titulo }}</h2>
+<form method="post" class="form-container">
+    {% csrf_token %}
+    <div class="form-group">
+        <label for="id_resumen">Resumen</label>
+        <textarea id="id_resumen" name="resumen" class="form-input" rows="5">{{ ficha.resumen }}</textarea>
+    </div>
+    <div class="form-group">
+        <label for="id_ubicacion">Ubicación</label>
+        <input id="id_ubicacion" name="ubicacion" class="form-input" value="{{ ficha.ubicacion }}">
+    </div>
+    <div class="form-actions">
+        <button type="submit" class="btn btn-success">Guardar ficha</button>
+        <a href="{% url 'detalle_libro' libro.id %}" class="btn btn-secondary">Cancelar</a>
+    </div>
+</form>
+{% endblock %}

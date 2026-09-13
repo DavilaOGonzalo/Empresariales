@@ -1,941 +1,1467 @@
-# Desarrollo de Aplicaciones Empresariales — Proyecto Django
+# Laboratorio Semana 4 — Relaciones entre Modelos en Django
 
-## Introducción
+## 1. Datos del proyecto
 
-Este documento presenta el desarrollo paso a paso de una aplicación web utilizando **Django 5**, **Python**, **Visual Studio Code** y **GitHub Copilot**.
-
-El proyecto consiste en crear una aplicación denominada `core`, cuyo objetivo es administrar y mostrar una lista de elementos (`Item`) mediante una interfaz web y el panel de administración de Django.
-
-Durante el desarrollo se evidencia cada etapa mediante comandos ejecutados en la terminal de Visual Studio Code, archivos de configuración, código fuente y capturas de pantalla.
-
----
-
-# 1. Preparar el entorno de trabajo
-
-## Objetivo
-
-Crear la carpeta principal del proyecto, configurar un entorno virtual de Python y crear la carpeta `src/`, que contendrá el código fuente de la aplicación.
-
-## Procedimiento
-
-Desde la terminal de Visual Studio Code se crea la carpeta principal:
-
-```bash
-mkdir django_project
-cd django_project
-```
-
-Posteriormente se crea el entorno virtual:
-
-```bash
-python -m venv venv
-```
-
-Para activar el entorno virtual en Windows:
-
-```bash
-venv\Scripts\activate
-```
-
-Una vez activado, la terminal debe mostrar el nombre del entorno virtual, por ejemplo:
-
-```text
-(venv) C:\...\django_project>
-```
-
-Finalmente se crea la carpeta `src`:
-
-```bash
-mkdir src
-```
-
-La estructura inicial queda:
-
-```text
-django_project/
-├── venv/
-└── src/
-```
-
-## Evidencia
-
-**Captura 1 — Creación y activación del entorno virtual**
-
-![Creación y activación del entorno virtual](docs/img/01-entorno-virtual.png)
-
-> En esta captura se debe evidenciar la creación de `django_project`, el entorno virtual `venv`, su activación y la creación de `src/`.
+**Curso:** Desarrollo de Aplicaciones Empresariales
+**Tecnología:** Django 5
+**Lenguaje:** Python
+**Base de datos:** SQLite
+**Aplicación principal:** `library`
 
 ---
 
-# 2. Instalar Django
+# 2. Objetivo del laboratorio
 
-## Objetivo
+En este laboratorio se continúa el desarrollo de la aplicación realizada durante la Semana 3.
 
-Instalar Django versión 5 dentro del entorno virtual y comprobar que la instalación fue realizada correctamente.
+El objetivo principal es incorporar relaciones entre modelos utilizando Django ORM.
 
-Con el entorno virtual activado se ejecuta:
+Se trabajarán las siguientes relaciones:
 
-```bash
-python -m pip install "Django>=5,<6"
-```
-
-Después se comprueba la versión instalada:
-
-```bash
-python -m django --version
-```
-
-El resultado debe corresponder a una versión de Django 5.x.
-
-También se puede verificar mediante:
-
-```bash
-pip show django
-```
-
-## Evidencia
-
-**Captura 2 — Instalación y verificación de Django**
-
-![Instalación de Django](docs/img/02-instalacion-django.png)
-
-> La captura debe mostrar la instalación mediante `pip` y el resultado de `python -m django --version`.
+* Relación 1:1 utilizando `OneToOneField`.
+* Relación 1:N utilizando `ForeignKey`.
+* Relación N:M utilizando `ManyToManyField`.
+* Modelo intermedio para la relación N:M.
+* Uso de `select_related()`.
+* Uso de `prefetch_related()`.
+* Migraciones de Django.
+* Acceso a relaciones desde las vistas y templates.
+* CRUD del modelo intermedio.
 
 ---
 
-# 3. Crear el proyecto con configuración separada
+# 3. Estructura final del proyecto
 
-## Objetivo
-
-Crear el proyecto Django denominado `config` dentro de `src/`, manteniendo `manage.py` directamente en `src/` y los archivos de configuración dentro de `src/config/`.
-
-Desde la carpeta raíz del proyecto se ejecuta:
-
-```bash
-django-admin startproject config src
-```
-
-La estructura resultante es:
+La estructura que se busca tener al finalizar el laboratorio es:
 
 ```text
-django_project/
-├── venv/
-└── src/
-    ├── manage.py
-    └── config/
-        ├── __init__.py
-        ├── asgi.py
-        ├── settings.py
-        ├── urls.py
-        └── wsgi.py
+MYDJANGO-main/
+│
+├── src/
+│   │
+│   ├── config/
+│   │   ├── __init__.py
+│   │   ├── asgi.py
+│   │   ├── settings.py
+│   │   ├── urls.py
+│   │   └── wsgi.py
+│   │
+│   ├── library/
+│   │   ├── migrations/
+│   │   │   └── __init__.py
+│   │   │
+│   │   ├── static/
+│   │   │   └── library/
+│   │   │       └── css/
+│   │   │           └── style.css
+│   │   │
+│   │   ├── templates/
+│   │   │   └── library/
+│   │   │       ├── lista.html
+│   │   │       ├── detalle.html
+│   │   │       ├── crear.html
+│   │   │       ├── editar.html
+│   │   │       ├── eliminar.html
+│   │   │       └── relaciones.html
+│   │   │
+│   │   ├── __init__.py
+│   │   ├── admin.py
+│   │   ├── apps.py
+│   │   ├── forms.py
+│   │   ├── models.py
+│   │   ├── tests.py
+│   │   ├── urls.py
+│   │   └── views.py
+│   │
+│   └── manage.py
+│
+├── evidencias/
+│   ├── EVIDENCIA_EJERCICIO_1.md
+│   ├── EVIDENCIA_EJERCICIO_6.md
+│   └── MIGRACION_SEMANA_2.md
+│
+├── .gitignore
+├── README.md
+├── mydjango.md
+└── requirements.txt
 ```
-
-Esta estructura permite separar claramente el código fuente del entorno virtual y mantener la configuración del proyecto dentro de `config`.
-
-## Evidencia
-
-**Captura 3 — Creación del proyecto Django**
-
-![Estructura del proyecto](docs/img/03-proyecto-django.png)
-
-> La captura debe mostrar en el explorador de VS Code que `manage.py` se encuentra dentro de `src/` y que `settings.py`, `urls.py`, `asgi.py` y `wsgi.py` están dentro de `src/config/`.
 
 ---
 
-# 4. Crear y registrar la aplicación core
+# 4. Limpieza del proyecto
 
-## Objetivo
-
-Crear una aplicación Django denominada `core` y registrarla dentro de `INSTALLED_APPS`.
-
-Primero se ingresa a `src`:
-
-```bash
-cd src
-```
-
-Luego se crea la aplicación:
-
-```bash
-python manage.py startapp core
-```
-
-La estructura de la aplicación será similar a:
+Durante la revisión de la aplicación se encontraron dos aplicaciones:
 
 ```text
-src/
-├── manage.py
-├── config/
-│   ├── settings.py
-│   └── urls.py
-└── core/
-    ├── __init__.py
-    ├── admin.py
-    ├── apps.py
-    ├── migrations/
-    ├── models.py
-    ├── tests.py
-    └── views.py
+src/core/
+src/library/
 ```
 
-Después se abre:
+La aplicación utilizada para continuar el proyecto será:
+
+```text
+library
+```
+
+Por lo tanto, `core` corresponde a código anterior que debe revisarse antes de eliminarse.
+
+## 4.1. Antes de eliminar `core`
+
+Primero se debe verificar que `core` no esté siendo utilizado en:
 
 ```text
 src/config/settings.py
+src/config/urls.py
+src/library/
 ```
 
-y se agrega `core` a `INSTALLED_APPS`:
+También se debe revisar si existe:
 
 ```python
-INSTALLED_APPS = [
-    "django.contrib.admin",
-    "django.contrib.auth",
-    "django.contrib.contenttypes",
-    "django.contrib.sessions",
-    "django.contrib.messages",
-    "django.contrib.staticfiles",
-
-    "core",
-]
+'core',
 ```
 
-## Evidencia
+dentro de `INSTALLED_APPS`.
 
-**Captura 4 — Aplicación core registrada**
+Si `core` ya no se utiliza, puede eliminarse.
 
-![Aplicación core](docs/img/04-core-registrada.png)
-
-> La captura debe mostrar la carpeta `core` y la modificación de `INSTALLED_APPS`.
+> No se recomienda eliminar la carpeta `core` sin verificar primero sus referencias.
 
 ---
 
-# 5. Definir el modelo Item
+# 5. Aplicación principal
 
-## Objetivo
-
-Crear el modelo `Item` con los campos:
-
-* `name`: nombre del elemento.
-* `description`: descripción opcional.
-* `created_at`: fecha y hora de creación automática.
-
-En:
+La aplicación utilizada para el laboratorio es:
 
 ```text
-src/core/models.py
+library
 ```
 
-se define:
+Se encuentra ubicada en:
+
+```text
+src/library/
+```
+
+Sus archivos principales son:
+
+```text
+models.py
+views.py
+urls.py
+forms.py
+admin.py
+```
+
+El archivo más importante para este laboratorio será:
+
+```text
+models.py
+```
+
+porque allí se definirán las relaciones entre las entidades.
+
+---
+
+# 6. Recuperación de la aplicación de la Semana 3
+
+La aplicación desarrollada durante la Semana 3 se utiliza como punto de partida.
+
+Se debe identificar:
+
+* Modelo principal.
+* Modelos existentes.
+* Views.
+* Templates.
+* Formularios.
+* URLs.
+* Migraciones existentes.
+
+La aplicación actualmente contiene operaciones CRUD como:
+
+```text
+Crear
+Listar
+Ver detalle
+Editar
+Eliminar
+```
+
+Estas funcionalidades serán conservadas.
+
+---
+
+# 7. Entidades de la Semana 3
+
+Las cinco entidades originales de la aplicación deben mantenerse.
+
+## Entidad 1
+
+**Nombre:** ______________________________
+
+**Descripción:**
+
+---
+
+## Entidad 2
+
+**Nombre:** ______________________________
+
+**Descripción:**
+
+---
+
+## Entidad 3
+
+**Nombre:** ______________________________
+
+**Descripción:**
+
+---
+
+## Entidad 4
+
+**Nombre:** ______________________________
+
+**Descripción:**
+
+---
+
+## Entidad 5
+
+**Nombre:** ______________________________
+
+**Descripción:**
+
+---
+
+Estas cinco entidades representan el problema desarrollado durante la Semana 3.
+
+---
+
+# 8. Relación 1:1
+
+La primera relación que se implementará será una relación uno a uno.
+
+En Django se utiliza:
+
+```python
+OneToOneField
+```
+
+La nueva entidad funcionará como una extensión o perfil de una entidad existente.
+
+Ejemplo:
+
+```python
+class Perfil(models.Model):
+    entidad = models.OneToOneField(
+        EntidadPrincipal,
+        on_delete=models.CASCADE,
+        related_name="perfil"
+    )
+
+    descripcion = models.TextField(blank=True)
+```
+
+## Justificación
+
+La relación 1:1 se utiliza cuando un registro de una entidad solamente puede tener un registro relacionado en la otra entidad.
+
+Por ejemplo, una entidad principal puede tener un único perfil o información adicional.
+
+## `related_name`
+
+Se utiliza:
+
+```python
+related_name="perfil"
+```
+
+Esto permite acceder al perfil desde la entidad principal:
+
+```python
+objeto.perfil
+```
+
+## `on_delete`
+
+Se utiliza:
+
+```python
+on_delete=models.CASCADE
+```
+
+porque el perfil depende de la existencia de la entidad principal.
+
+Si se elimina la entidad principal, también se elimina su información adicional.
+
+---
+
+# 9. Relación 1:N
+
+La segunda relación será uno a muchos.
+
+En Django se utiliza:
+
+```python
+ForeignKey
+```
+
+Ejemplo:
+
+```python
+class EntidadRelacionada(models.Model):
+    entidad_principal = models.ForeignKey(
+        EntidadPrincipal,
+        on_delete=models.CASCADE,
+        related_name="entidades_relacionadas"
+    )
+```
+
+Esto significa:
+
+```text
+EntidadPrincipal
+       │
+       ├── EntidadRelacionada
+       ├── EntidadRelacionada
+       └── EntidadRelacionada
+```
+
+Una entidad principal puede tener muchos registros relacionados.
+
+## Justificación
+
+La relación 1:N permite representar una situación donde un registro principal puede estar asociado con varios registros secundarios.
+
+## `related_name`
+
+Se utiliza:
+
+```python
+related_name="entidades_relacionadas"
+```
+
+Por ejemplo:
+
+```python
+objeto.entidades_relacionadas.all()
+```
+
+Esto permite obtener todos los registros relacionados.
+
+---
+
+# 10. Relación N:M
+
+La tercera relación será muchos a muchos.
+
+Django permite representar esta relación mediante:
+
+```python
+ManyToManyField
+```
+
+En este laboratorio se utilizará un modelo intermedio.
+
+Ejemplo:
+
+```python
+class EntidadPrincipal(models.Model):
+    entidades = models.ManyToManyField(
+        EntidadSecundaria,
+        through="RelacionIntermedia",
+        related_name="entidades_principales"
+    )
+```
+
+---
+
+# 11. Modelo intermedio
+
+El modelo intermedio será:
+
+```python
+class RelacionIntermedia(models.Model):
+    entidad_principal = models.ForeignKey(
+        EntidadPrincipal,
+        on_delete=models.CASCADE,
+        related_name="relaciones_intermedias"
+    )
+
+    entidad_secundaria = models.ForeignKey(
+        EntidadSecundaria,
+        on_delete=models.CASCADE,
+        related_name="relaciones_intermedias"
+    )
+
+    fecha = models.DateField()
+
+    estado = models.CharField(
+        max_length=30
+    )
+```
+
+El modelo intermedio tendrá por lo menos dos atributos propios de la relación:
+
+```text
+fecha
+estado
+```
+
+Esto permite almacenar información adicional sobre la relación.
+
+---
+
+# 12. ¿Por qué utilizar un modelo intermedio?
+
+Un modelo intermedio es necesario cuando la relación N:M necesita almacenar información adicional.
+
+Por ejemplo:
+
+```text
+Entidad A
+   │
+   │
+   ▼
+Relación Intermedia
+   │
+   ├── fecha
+   ├── estado
+   │
+   ▼
+Entidad B
+```
+
+De esta manera la relación deja de ser solamente una asociación entre dos entidades y puede almacenar información propia.
+
+---
+
+# 13. Modelo final
+
+El modelo final debe tener como mínimo:
+
+```text
+5 entidades originales
++
+1 entidad para la relación 1:1
++
+1 modelo intermedio para N:M
+```
+
+Por lo tanto:
+
+```text
+Mínimo: 7 entidades/modelos
+```
+
+Además, una de las entidades originales debe mantener la relación `ForeignKey` de la Semana 3.
+
+---
+
+# 14. Ejemplo de estructura de `models.py`
+
+La estructura conceptual será:
 
 ```python
 from django.db import models
 
 
-class Item(models.Model):
-    name = models.CharField(max_length=200)
-    description = models.TextField(blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+class Entidad1(models.Model):
+    # Campos originales
+    pass
 
-    def __str__(self):
-        return self.name
+
+class Entidad2(models.Model):
+    # Campos originales
+    pass
+
+
+class Entidad3(models.Model):
+    # Campos originales
+    pass
+
+
+class Entidad4(models.Model):
+    # Campos originales
+    entidad1 = models.ForeignKey(
+        Entidad1,
+        on_delete=models.CASCADE,
+        related_name="entidades4"
+    )
+
+
+class Entidad5(models.Model):
+    # Campos originales
+    pass
+
+
+class Perfil(models.Model):
+    entidad1 = models.OneToOneField(
+        Entidad1,
+        on_delete=models.CASCADE,
+        related_name="perfil"
+    )
+
+    descripcion = models.TextField(blank=True)
+
+
+class RelacionIntermedia(models.Model):
+    entidad1 = models.ForeignKey(
+        Entidad1,
+        on_delete=models.CASCADE,
+        related_name="relaciones"
+    )
+
+    entidad2 = models.ForeignKey(
+        Entidad2,
+        on_delete=models.CASCADE,
+        related_name="relaciones"
+    )
+
+    fecha = models.DateField()
+
+    estado = models.CharField(
+        max_length=30
+    )
 ```
 
-### Explicación
+La relación N:M se puede declarar en una de las entidades:
 
-`CharField` permite almacenar texto de longitud limitada. En este caso, el nombre puede tener hasta 200 caracteres.
+```python
+class Entidad1(models.Model):
 
-`TextField` permite almacenar texto más extenso. La opción `blank=True` permite que la descripción pueda quedar vacía.
+    entidades2 = models.ManyToManyField(
+        Entidad2,
+        through="RelacionIntermedia",
+        related_name="entidades1"
+    )
+```
 
-`DateTimeField(auto_now_add=True)` registra automáticamente la fecha y hora en que se crea cada objeto.
+---
 
-El método `__str__()` permite que los objetos se muestren utilizando su nombre en el panel de administración.
+# 15. Migraciones
 
-## Generar las migraciones
+Después de modificar los modelos se debe ejecutar:
 
-Desde `src/`:
+```powershell
+cd src
+```
 
-```bash
+Activar el entorno virtual si todavía no está activo:
+
+```powershell
+..\.venv\Scripts\Activate.ps1
+```
+
+Luego:
+
+```powershell
 python manage.py makemigrations
 ```
 
-Después se aplican:
+Después:
 
-```bash
+```powershell
 python manage.py migrate
 ```
 
-Las migraciones permiten convertir la definición del modelo Python en la estructura correspondiente de la base de datos.
+Finalmente:
 
-## Evidencia
+```powershell
+python manage.py showmigrations
+```
 
-**Captura 5 — Modelo Item y migraciones**
+Las migraciones aplicadas aparecerán con:
 
-![Modelo Item](docs/img/05-modelo-migraciones.png)
-
-> La captura debe evidenciar el contenido de `models.py`, la ejecución de `makemigrations` y la ejecución de `migrate`.
+```text
+[X]
+```
 
 ---
 
-# 6. Crear la vista y las URLs
+# 16. Verificar las migraciones
 
-## Objetivo
-
-Crear una vista que consulte todos los objetos `Item` y los envíe a una plantilla HTML.
-
-## Crear la vista
-
-En:
+Ejemplo:
 
 ```text
-src/core/views.py
+library
+ [X] 0001_initial
+ [X] 0002_...
+ [X] 0003_...
 ```
 
-se escribe:
+La `X` significa que la migración fue aplicada correctamente.
+
+---
+
+# 17. `select_related()`
+
+`select_related()` se utiliza principalmente con relaciones:
+
+```text
+ForeignKey
+OneToOneField
+```
+
+Ejemplo:
+
+```python
+objetos = Entidad2.objects.select_related(
+    "entidad1"
+).all()
+```
+
+Esto permite obtener información relacionada mediante una consulta optimizada.
+
+---
+
+# 18. `prefetch_related()`
+
+`prefetch_related()` se utiliza principalmente para relaciones:
+
+```text
+ManyToManyField
+```
+
+y relaciones reversas.
+
+Ejemplo:
+
+```python
+objetos = Entidad1.objects.prefetch_related(
+    "entidades2"
+).all()
+```
+
+Esto permite obtener los objetos relacionados de manera eficiente.
+
+---
+
+# 19. Vista con `select_related()`
+
+En `views.py` se puede implementar:
 
 ```python
 from django.shortcuts import render
+from .models import Entidad2
 
-from .models import Item
 
+def lista_select_related(request):
 
-def item_list(request):
-    items = Item.objects.all()
-    return render(request, "core/item_list.html", {"items": items})
+    objetos = Entidad2.objects.select_related(
+        "entidad1"
+    ).all()
+
+    return render(
+        request,
+        "library/relaciones.html",
+        {
+            "objetos": objetos
+        }
+    )
 ```
-
-La consulta:
-
-```python
-Item.objects.all()
-```
-
-obtiene todos los registros existentes del modelo `Item`.
-
-La función `render()` combina la información obtenida con la plantilla HTML.
-
-## Crear las URLs de core
-
-Se crea:
-
-```text
-src/core/urls.py
-```
-
-con el siguiente contenido:
-
-```python
-from django.urls import path
-
-from .views import item_list
-
-
-urlpatterns = [
-    path("", item_list, name="item_list"),
-]
-```
-
-## Enlazar las URLs de la aplicación
-
-En:
-
-```text
-src/config/urls.py
-```
-
-se configura:
-
-```python
-from django.contrib import admin
-from django.urls import include, path
-
-
-urlpatterns = [
-    path("admin/", admin.site.urls),
-    path("", include("core.urls")),
-]
-```
-
-El uso de:
-
-```python
-include("core.urls")
-```
-
-permite que las URLs de la aplicación `core` sean incorporadas a las URLs principales del proyecto.
-
-## Evidencia
-
-**Captura 6 — Vista y configuración de URLs**
-
-![Vista y URLs](docs/img/06-vista-urls.png)
-
-> La captura debe mostrar `views.py`, `core/urls.py` y `config/urls.py`.
 
 ---
 
-# 7. Crear las plantillas
+# 20. Vista con `prefetch_related()`
 
-## Objetivo
+También se implementará una vista utilizando:
 
-Crear una plantilla base reutilizable y una plantilla específica para mostrar los elementos almacenados.
-
-Se recomienda crear la siguiente estructura:
-
-```text
-src/
-└── core/
-    └── templates/
-        ├── base.html
-        └── core/
-            └── item_list.html
+```python
+prefetch_related()
 ```
 
-## Plantilla base
+Ejemplo:
+
+```python
+from django.shortcuts import render
+from .models import Entidad1
+
+
+def lista_prefetch_related(request):
+
+    objetos = Entidad1.objects.prefetch_related(
+        "entidades2"
+    ).all()
+
+    return render(
+        request,
+        "library/relaciones.html",
+        {
+            "objetos": objetos
+        }
+    )
+```
+
+---
+
+# 21. URLs
 
 En:
 
 ```text
-src/core/templates/base.html
+src/library/urls.py
 ```
 
-se crea:
+se agregarán las rutas correspondientes.
 
-```html
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Django Items{% endblock %}</title>
-</head>
-<body>
-    <header>
-        <h1>Gestión de Items</h1>
-    </header>
+Ejemplo:
 
-    <main>
-        {% block content %}
-        {% endblock %}
-    </main>
-</body>
-</html>
+```python
+from django.urls import path
+from . import views
+
+
+urlpatterns = [
+
+    path(
+        "relaciones/select/",
+        views.lista_select_related,
+        name="lista_select"
+    ),
+
+    path(
+        "relaciones/prefetch/",
+        views.lista_prefetch_related,
+        name="lista_prefetch"
+    ),
+
+]
 ```
 
-## Plantilla item_list
+---
 
-En:
+# 22. Template para mostrar relaciones
+
+Archivo:
 
 ```text
-src/core/templates/core/item_list.html
+templates/library/relaciones.html
 ```
 
-se crea:
+Ejemplo:
 
 ```html
 {% extends "base.html" %}
 
-{% block title %}Lista de Items{% endblock %}
-
 {% block content %}
-    <h2>Lista de Items</h2>
 
-    {% for item in items %}
-        <article>
-            <h3>{{ item.name }}</h3>
+<h1>Relaciones entre entidades</h1>
 
-            {% if item.description %}
-                <p>{{ item.description }}</p>
-            {% endif %}
+{% for objeto in objetos %}
 
-            <small>Creado: {{ item.created_at }}</small>
-        </article>
-    {% empty %}
-        <p>No existen items registrados.</p>
-    {% endfor %}
+    <div>
+        <h2>{{ objeto }}</h2>
+
+        {% if objeto.entidad1 %}
+            <p>
+                Relación directa:
+                {{ objeto.entidad1 }}
+            </p>
+        {% endif %}
+
+    </div>
+
+{% empty %}
+
+    <p>No existen registros.</p>
+
+{% endfor %}
+
 {% endblock %}
 ```
 
-El bloque:
+---
 
-```django
-{% for item in items %}
+# 23. Acceso mediante `related_name`
+
+Si tenemos:
+
+```python
+related_name="perfil"
 ```
 
-recorre todos los objetos enviados desde la vista.
-
-El bloque:
+podemos acceder:
 
 ```django
-{% empty %}
+{{ objeto.perfil }}
 ```
 
-permite mostrar un mensaje cuando no existen registros.
+Si tenemos:
 
-## Evidencia
+```python
+related_name="entidades_relacionadas"
+```
 
-**Captura 7 — Plantillas HTML**
+podemos utilizar:
 
-![Plantillas](docs/img/07-plantillas.png)
-
-> La captura debe mostrar `base.html`, `item_list.html` y la estructura de carpetas `templates`.
+```django
+{% for item in objeto.entidades_relacionadas.all %}
+    {{ item }}
+{% endfor %}
+```
 
 ---
 
-# 8. Configurar el administrador y cargar datos
+# 24. Acceso al modelo intermedio
 
-## Objetivo
-
-Registrar el modelo `Item` en el administrador de Django, crear un usuario administrador y utilizar el panel para ingresar datos.
-
-## Registrar Item
-
-En:
-
-```text
-src/core/admin.py
-```
-
-se configura:
-
-```python
-from django.contrib import admin
-
-from .models import Item
-
-
-@admin.register(Item)
-class ItemAdmin(admin.ModelAdmin):
-    list_display = ("name", "created_at")
-    search_fields = ("name", "description")
-```
-
-Esto permite visualizar el nombre y la fecha de creación en el listado del administrador.
-
-## Crear el superusuario
-
-Desde `src/`:
-
-```bash
-python manage.py createsuperuser
-```
-
-Django solicitará:
-
-```text
-Username:
-Email address:
-Password:
-Password (again):
-```
-
-La contraseña no será visible mientras se escribe por motivos de seguridad.
-
-## Ejecutar el servidor
-
-```bash
-python manage.py runserver
-```
-
-Luego se accede a:
-
-```text
-http://127.0.0.1:8000/admin/
-```
-
-Se inicia sesión utilizando las credenciales del superusuario.
-
-## Registrar los elementos
-
-Desde el panel:
-
-1. Ingresar a **Items**.
-2. Seleccionar **Add Item**.
-3. Registrar el primer elemento.
-4. Guardarlo.
-5. Repetir el procedimiento para crear un segundo elemento.
+El modelo intermedio también puede consultarse directamente.
 
 Ejemplo:
 
-| Name       | Description                |
-| ---------- | -------------------------- |
-| Producto 1 | Primer elemento de prueba  |
-| Producto 2 | Segundo elemento de prueba |
+```python
+relaciones = RelacionIntermedia.objects.select_related(
+    "entidad1",
+    "entidad2"
+).all()
+```
 
-## Evidencia
+En el template:
 
-**Captura 8.1 — Registro del modelo en admin**
+```html
+{% for relacion in relaciones %}
 
-![Configuración del administrador](docs/img/08-admin-config.png)
+    <p>
+        {{ relacion.entidad1 }}
+        -
+        {{ relacion.entidad2 }}
+    </p>
 
-**Captura 8.2 — Creación del superusuario**
+    <p>
+        Fecha: {{ relacion.fecha }}
+    </p>
 
-![Superusuario](docs/img/08-superusuario.png)
+    <p>
+        Estado: {{ relacion.estado }}
+    </p>
 
-**Captura 8.3 — Panel de administración**
-
-![Panel de administración](docs/img/08-admin-panel.png)
-
-**Captura 8.4 — Items registrados**
-
-![Items registrados](docs/img/08-items.png)
-
-> Las capturas deben evidenciar el registro del modelo, la creación del superusuario, el acceso al panel y la existencia de al menos dos elementos.
+{% endfor %}
+```
 
 ---
 
-# 9. Verificar el funcionamiento
+# 25. CRUD del modelo intermedio
 
-## Objetivo
+El modelo intermedio debe tener operaciones CRUD.
 
-Comprobar que la aplicación funciona correctamente tanto desde la página principal como desde el panel de administración.
-
-Se ejecuta:
-
-```bash
-python manage.py runserver
-```
-
-Django mostrará una dirección similar a:
+Las operaciones serán:
 
 ```text
-Starting development server at http://127.0.0.1:8000/
+Crear relación
+Listar relaciones
+Editar relación
+Eliminar relación
 ```
-
-## Página principal
-
-Se accede a:
-
-```text
-http://127.0.0.1:8000/
-```
-
-La página debe mostrar los elementos registrados.
 
 Por ejemplo:
 
 ```text
-Gestión de Items
-
-Lista de Items
-
-Producto 1
-Primer elemento de prueba
-
-Producto 2
-Segundo elemento de prueba
+/relaciones/
 ```
 
-## Panel de administración
+para listar.
 
-También se comprueba:
+```text
+/relaciones/crear/
+```
+
+para crear.
+
+```text
+/relaciones/editar/1/
+```
+
+para editar.
+
+```text
+/relaciones/eliminar/1/
+```
+
+para eliminar.
+
+---
+
+# 26. Formulario del modelo intermedio
+
+En:
+
+```text
+src/library/forms.py
+```
+
+se puede crear:
+
+```python
+from django import forms
+from .models import RelacionIntermedia
+
+
+class RelacionIntermediaForm(forms.ModelForm):
+
+    class Meta:
+        model = RelacionIntermedia
+
+        fields = [
+            "entidad1",
+            "entidad2",
+            "fecha",
+            "estado"
+        ]
+```
+
+---
+
+# 27. Vista para crear
+
+Ejemplo:
+
+```python
+from django.shortcuts import render, redirect
+from .forms import RelacionIntermediaForm
+
+
+def crear_relacion(request):
+
+    if request.method == "POST":
+
+        form = RelacionIntermediaForm(request.POST)
+
+        if form.is_valid():
+
+            form.save()
+
+            return redirect("lista_relaciones")
+
+    else:
+
+        form = RelacionIntermediaForm()
+
+    return render(
+        request,
+        "library/crear_relacion.html",
+        {
+            "form": form
+        }
+    )
+```
+
+---
+
+# 28. Vista para editar
+
+```python
+def editar_relacion(request, id):
+
+    relacion = RelacionIntermedia.objects.get(id=id)
+
+    if request.method == "POST":
+
+        form = RelacionIntermediaForm(
+            request.POST,
+            instance=relacion
+        )
+
+        if form.is_valid():
+
+            form.save()
+
+            return redirect("lista_relaciones")
+
+    else:
+
+        form = RelacionIntermediaForm(
+            instance=relacion
+        )
+
+    return render(
+        request,
+        "library/editar_relacion.html",
+        {
+            "form": form
+        }
+    )
+```
+
+---
+
+# 29. Vista para eliminar
+
+```python
+def eliminar_relacion(request, id):
+
+    relacion = RelacionIntermedia.objects.get(id=id)
+
+    if request.method == "POST":
+
+        relacion.delete()
+
+        return redirect("lista_relaciones")
+
+    return render(
+        request,
+        "library/eliminar_relacion.html",
+        {
+            "relacion": relacion
+        }
+    )
+```
+
+---
+
+# 30. Flujo MVT
+
+El funcionamiento de la aplicación sigue el patrón MVT de Django:
+
+```text
+USUARIO
+   │
+   ▼
+REQUEST
+   │
+   ▼
+URL
+   │
+   ▼
+VIEW
+   │
+   ▼
+MODEL / ORM
+   │
+   ▼
+SQLite
+   │
+   ▼
+MODEL / ORM
+   │
+   ▼
+VIEW
+   │
+   ▼
+CONTEXT
+   │
+   ▼
+TEMPLATE
+   │
+   ▼
+RESPONSE
+   │
+   ▼
+USUARIO
+```
+
+---
+
+# 31. Explicación del flujo
+
+## Request
+
+El usuario solicita una dirección desde el navegador.
+
+Ejemplo:
+
+```text
+/relaciones/
+```
+
+## URL
+
+Django busca la ruta correspondiente en:
+
+```text
+urls.py
+```
+
+## View
+
+La URL llama a una función de:
+
+```text
+views.py
+```
+
+## Model / ORM
+
+La vista consulta los modelos:
+
+```python
+RelacionIntermedia.objects.all()
+```
+
+o:
+
+```python
+Entidad.objects.select_related(...)
+```
+
+o:
+
+```python
+Entidad.objects.prefetch_related(...)
+```
+
+## SQLite
+
+Django ORM transforma las consultas en instrucciones SQL para consultar la base de datos.
+
+## Context
+
+Los resultados se envían al template mediante un diccionario:
+
+```python
+{
+    "objetos": objetos
+}
+```
+
+## Template
+
+El HTML utiliza los datos:
+
+```django
+{% for objeto in objetos %}
+```
+
+## Response
+
+Finalmente Django devuelve la página HTML al navegador.
+
+---
+
+# 32. SQL conceptual
+
+Aunque se utiliza Django ORM, internamente se generan consultas SQL.
+
+Por ejemplo:
+
+```python
+Entidad.objects.all()
+```
+
+conceptualmente representa:
+
+```sql
+SELECT *
+FROM entidad;
+```
+
+Una relación mediante `ForeignKey` puede utilizar:
+
+```sql
+SELECT *
+FROM entidad2
+INNER JOIN entidad1
+ON entidad2.entidad1_id = entidad1.id;
+```
+
+Una relación N:M utiliza una tabla intermedia:
+
+```text
+entidad1
+   │
+   │
+relacion_intermedia
+   │
+   │
+entidad2
+```
+
+---
+
+# 33. Panel administrativo
+
+Para registrar los modelos en Django Admin se utiliza:
+
+```python
+from django.contrib import admin
+from .models import (
+    Entidad1,
+    Entidad2,
+    Entidad3,
+    Entidad4,
+    Entidad5,
+    Perfil,
+    RelacionIntermedia
+)
+
+
+admin.site.register(Entidad1)
+admin.site.register(Entidad2)
+admin.site.register(Entidad3)
+admin.site.register(Entidad4)
+admin.site.register(Entidad5)
+admin.site.register(Perfil)
+admin.site.register(RelacionIntermedia)
+```
+
+El servidor se inicia con:
+
+```powershell
+python manage.py runserver
+```
+
+Luego se ingresa a:
 
 ```text
 http://127.0.0.1:8000/admin/
 ```
 
-Debe aparecer el panel administrativo de Django y el modelo `Items`.
-
-## Evidencia
-
-**Captura 9.1 — Página principal funcionando**
-
-![Página principal](docs/img/09-pagina-principal.png)
-
-**Captura 9.2 — Panel de administración funcionando**
-
-![Panel funcionando](docs/img/09-admin-funcionando.png)
-
-> Las capturas deben demostrar que la aplicación funciona correctamente y que los datos registrados desde el administrador aparecen en la página principal.
-
 ---
 
-# 10. Documentar y subir el proyecto
+# 34. Crear superusuario
 
-## 10.1 Generar requirements.txt
+Si todavía no existe un usuario administrador:
 
-Con el entorno virtual activado se ejecuta:
-
-```bash
-pip freeze > requirements.txt
-```
-
-Este archivo permite conocer las dependencias necesarias para instalar el proyecto en otro equipo.
-
-Se puede comprobar su contenido mediante:
-
-```bash
-type requirements.txt
-```
-
-En Linux/macOS:
-
-```bash
-cat requirements.txt
-```
-
-El archivo debe incluir Django y las demás dependencias instaladas.
-
----
-
-## 10.2 Crear README.md
-
-El presente documento funciona como documentación principal del proyecto.
-
-Debe explicar:
-
-* Objetivo del proyecto.
-* Tecnologías utilizadas.
-* Estructura de carpetas.
-* Creación del entorno virtual.
-* Instalación de dependencias.
-* Aplicación de migraciones.
-* Creación del superusuario.
-* Ejecución del servidor.
-* Acceso al sitio.
-* Acceso al administrador.
-
----
-
-## 10.3 Estructura final del proyecto
-
-La estructura esperada es:
-
-```text
-django_project/
-├── venv/
-├── requirements.txt
-├── README.md
-├── .gitignore
-└── src/
-    ├── manage.py
-    ├── config/
-    │   ├── __init__.py
-    │   ├── asgi.py
-    │   ├── settings.py
-    │   ├── urls.py
-    │   └── wsgi.py
-    │
-    └── core/
-        ├── __init__.py
-        ├── admin.py
-        ├── apps.py
-        ├── migrations/
-        │   └── ...
-        ├── models.py
-        ├── tests.py
-        ├── urls.py
-        ├── views.py
-        └── templates/
-            ├── base.html
-            └── core/
-                └── item_list.html
-```
-
----
-
-## 10.4 Crear .gitignore
-
-Antes de subir el proyecto a GitHub es importante evitar archivos innecesarios o sensibles.
-
-Se crea:
-
-```text
-.gitignore
-```
-
-con:
-
-```gitignore
-venv/
-__pycache__/
-*.py[cod]
-db.sqlite3
-.env
-.vscode/
-```
-
-El entorno virtual `venv/` no debe subirse al repositorio porque puede volver a crearse mediante `requirements.txt`.
-
----
-
-## 10.5 Inicializar Git
-
-Desde la carpeta raíz `django_project/`:
-
-```bash
-git init
-```
-
-Se agregan los archivos:
-
-```bash
-git add .
-```
-
-Se comprueba lo que será incluido:
-
-```bash
-git status
-```
-
-Después se crea el primer commit:
-
-```bash
-git commit -m "Crear proyecto Django con aplicación core"
-```
-
----
-
-## 10.6 Crear el repositorio en GitHub
-
-En GitHub se crea un nuevo repositorio para el proyecto.
-
-Una vez creado, se vincula el repositorio remoto con el proyecto local:
-
-```bash
-git remote add origin URL_DEL_REPOSITORIO
-```
-
-Se puede verificar:
-
-```bash
-git remote -v
-```
-
-Finalmente se suben los archivos:
-
-```bash
-git branch -M main
-git push -u origin main
-```
-
-La URL exacta del repositorio debe reemplazarse por la correspondiente al repositorio creado.
-
-## Evidencia
-
-**Captura 10.1 — requirements.txt**
-
-![Requirements](docs/img/10-requirements.png)
-
-**Captura 10.2 — README.md y estructura final**
-
-![Estructura final](docs/img/10-estructura-final.png)
-
-**Captura 10.3 — Repositorio de GitHub**
-
-![Repositorio GitHub](docs/img/10-github.png)
-
-> La última captura debe mostrar el repositorio de GitHub con el proyecto correctamente subido.
-
----
-
-# Uso de GitHub Copilot
-
-Durante el desarrollo se utilizó **GitHub Copilot** como herramienta de asistencia para comprender y desarrollar el código.
-
-Copilot puede ayudar a:
-
-* Sugerir código Python.
-* Explicar funciones y clases.
-* Proponer estructuras de archivos.
-* Detectar errores.
-* Sugerir correcciones.
-* Explicar conceptos de Django.
-
-Sin embargo, las sugerencias deben ser revisadas y comprendidas antes de incorporarlas al proyecto. El objetivo no es copiar código automáticamente, sino utilizar la herramienta como apoyo durante el proceso de aprendizaje.
-
-Por ejemplo, para comprender el modelo se puede solicitar a Copilot una explicación de:
-
-```python
-class Item(models.Model):
-    name = models.CharField(max_length=200)
-    description = models.TextField(blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-```
-
-Posteriormente se debe verificar que la explicación coincida con el comportamiento real de Django.
-
----
-
-# Comandos principales utilizados
-
-A continuación se resumen los comandos utilizados durante el desarrollo:
-
-```bash
-mkdir django_project
-cd django_project
-
-python -m venv venv
-venv\Scripts\activate
-
-python -m pip install "Django>=5,<6"
-python -m django --version
-
-mkdir src
-django-admin startproject config src
-
-cd src
-python manage.py startapp core
-
-python manage.py makemigrations
-python manage.py migrate
-
+```powershell
 python manage.py createsuperuser
+```
 
+Se solicitará:
+
+```text
+Username
+Email
+Password
+```
+
+Después se puede ingresar a:
+
+```text
+http://127.0.0.1:8000/admin/
+```
+
+---
+
+# 35. Verificación final
+
+Antes de entregar el laboratorio se debe comprobar:
+
+* [ ] La aplicación `library` funciona.
+* [ ] El CRUD de la Semana 3 continúa funcionando.
+* [ ] Se mantienen las cinco entidades originales.
+* [ ] Existe una relación 1:1.
+* [ ] Existe una relación 1:N.
+* [ ] Existe una relación N:M.
+* [ ] La relación N:M utiliza `through`.
+* [ ] El modelo intermedio tiene mínimo dos atributos propios.
+* [ ] Se utilizó `related_name`.
+* [ ] Se justificó `on_delete`.
+* [ ] Se ejecutó `makemigrations`.
+* [ ] Se ejecutó `migrate`.
+* [ ] Se verificó `showmigrations`.
+* [ ] Se utilizó `select_related()`.
+* [ ] Se utilizó `prefetch_related()`.
+* [ ] Los templates muestran información relacionada.
+* [ ] El modelo intermedio tiene CRUD.
+* [ ] El panel administrativo funciona.
+* [ ] `requirements.txt` está actualizado.
+* [ ] `README.md` está actualizado.
+
+---
+
+# 36. Comandos utilizados
+
+Ubicarse en:
+
+```powershell
+cd "C:\Users\Pedro\OneDrive\Documents\GitHub\Desarrollo-de-Aplicaciones-Empresariales\Laboratorio 02\Semana 03"
+```
+
+Entrar a `src`:
+
+```powershell
+cd src
+```
+
+Activar entorno virtual:
+
+```powershell
+..\.venv\Scripts\Activate.ps1
+```
+
+Crear migraciones:
+
+```powershell
+python manage.py makemigrations
+```
+
+Aplicar migraciones:
+
+```powershell
+python manage.py migrate
+```
+
+Ver migraciones:
+
+```powershell
+python manage.py showmigrations
+```
+
+Ejecutar servidor:
+
+```powershell
 python manage.py runserver
 ```
 
-Para preparar el proyecto para GitHub:
+Crear superusuario:
 
-```bash
-pip freeze > requirements.txt
-
-git init
-git add .
-git commit -m "Crear proyecto Django con aplicación core"
-git branch -M main
-git remote add origin URL_DEL_REPOSITORIO
-git push -u origin main
+```powershell
+python manage.py createsuperuser
 ```
 
 ---
 
-# Conclusiones
+# 37. Requirements
 
-Se desarrolló una aplicación web básica utilizando Django 5, aplicando una estructura organizada mediante el directorio `src/` y el proyecto de configuración `config`.
+El archivo:
 
-Se creó la aplicación `core`, se definió el modelo `Item`, se generaron y aplicaron las migraciones, se implementó una vista para consultar los registros y se configuraron las URLs y plantillas.
+```text
+requirements.txt
+```
 
-También se configuró el administrador de Django, permitiendo crear y administrar elementos mediante un superusuario.
+debe contener las dependencias necesarias del proyecto.
 
-Finalmente, se verificó el funcionamiento de la aplicación desde el navegador, se generó `requirements.txt`, se documentó el proyecto mediante `README.md` y se preparó el código para su publicación en GitHub.
+Para verificar Django:
+
+```powershell
+python -m django --version
+```
+
+Ejemplo:
+
+```text
+5.x.x
+```
 
 ---
 
-# Checklist de entrega
+# 38. Git
 
-* [ ] Carpeta `django_project` creada.
-* [ ] Entorno virtual `venv` creado y activado.
-* [ ] Carpeta `src/` creada.
-* [ ] Django 5 instalado.
-* [ ] Versión de Django verificada.
-* [ ] Proyecto `config` creado dentro de `src/`.
-* [ ] Aplicación `core` creada.
-* [ ] `core` registrado en `INSTALLED_APPS`.
-* [ ] Modelo `Item` creado.
-* [ ] Migraciones generadas y aplicadas.
-* [ ] Vista `item_list` implementada.
-* [ ] `core/urls.py` creado.
-* [ ] `include()` configurado en `config/urls.py`.
-* [ ] `base.html` creado.
-* [ ] `core/item_list.html` creado.
-* [ ] Modelo `Item` registrado en Django Admin.
-* [ ] Superusuario creado.
-* [ ] Al menos dos Items registrados.
-* [ ] Página principal verificada.
-* [ ] Panel `/admin/` verificado.
-* [ ] `requirements.txt` generado.
-* [ ] `.gitignore` creado.
-* [ ] `README.md` creado.
-* [ ] Proyecto subido a GitHub.
-* [ ] Capturas de pantalla incorporadas a la documentación.
+Antes de realizar el commit se recomienda comprobar:
+
+```powershell
+git status
+```
+
+Agregar los cambios:
+
+```powershell
+git add .
+```
+
+Crear el commit:
+
+```powershell
+git commit -m "Implementar relaciones de modelos Semana 4"
+```
+
+Actualizar desde GitHub antes de hacer push:
+
+```powershell
+git pull origin main
+```
+
+Si no existen conflictos:
+
+```powershell
+git push origin main
+```
+
+---
+
+# 39. Repositorio
+
+Repositorio utilizado:
+
+```text
+https://github.com/PedroJrSuarez/Desarrollo-de-Aplicaciones-Empresariales
+```
+
+La URL del repositorio debe incluirse en la entrega final.
+
+---
+
+# 40. Evidencias
+
+Se deben tomar capturas de pantalla de los principales resultados.
+
+### Evidencia 1
+
+Estructura final del proyecto.
+
+### Evidencia 2
+
+Modelos con las relaciones.
+
+### Evidencia 3
+
+Migración creada:
+
+```text
+makemigrations
+```
+
+### Evidencia 4
+
+Migraciones aplicadas:
+
+```text
+migrate
+```
+
+### Evidencia 5
+
+Resultado de:
+
+```text
+showmigrations
+```
+
+### Evidencia 6
+
+Vista utilizando:
+
+```python
+select_related()
+```
+
+### Evidencia 7
+
+Vista utilizando:
+
+```python
+prefetch_related()
+```
+
+### Evidencia 8
+
+Template mostrando información relacionada.
+
+### Evidencia 9
+
+CRUD del modelo intermedio.
+
+### Evidencia 10
+
+Panel administrativo.
+
+### Evidencia 11
+
+Aplicación funcionando en el navegador.
+
+---
+
+# 41. Conclusiones
+
+## Conclusión 1
+
+Durante este laboratorio se aprendió a trabajar con relaciones entre modelos en Django. Se implementaron relaciones uno a uno, uno a muchos y muchos a muchos, comprendiendo cómo estas relaciones permiten representar mejor la información de una aplicación empresarial.
+
+## Conclusión 2
+
+También se aprendió a utilizar `select_related()` y `prefetch_related()` para consultar información relacionada mediante Django ORM. Además, se trabajaron migraciones y un modelo intermedio con atributos propios, permitiendo implementar un CRUD completo para administrar las relaciones.
+
+## Conclusión 3
+
+Finalmente, se pudo continuar la aplicación desarrollada en la Semana 3 y ampliar su estructura sin perder las funcionalidades existentes. Esto permitió comprender mejor cómo Django organiza los modelos, las vistas, los templates, las URLs y la base de datos dentro del patrón MVT.

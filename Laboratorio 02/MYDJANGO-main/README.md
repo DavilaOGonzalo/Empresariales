@@ -799,6 +799,72 @@ permite acceder a las funcionalidades de `library`.
 
 ---
 
+# LABORATORIO SEMANA 4 - RELACIONES ENTRE MODELOS
+
+La implementación actual continúa la aplicación de biblioteca de la Semana 3
+con Django 5, Python y SQLite. El catálogo de libros se persiste mediante el
+ORM y conserva el CRUD de `Libro`.
+
+## Instalación y ejecución
+
+```powershell
+cd src
+..\.venv\Scripts\Activate.ps1
+python -m pip install -r ..\requirements.txt
+python manage.py migrate
+python manage.py runserver
+```
+
+La aplicación está disponible en `http://127.0.0.1:8000/library/` y el panel
+administrativo en `http://127.0.0.1:8000/admin/`.
+
+## Entidades y relaciones
+
+- `Libro`: título, autor, categoría, disponibilidad, editorial y préstamos.
+- `Editorial`: editorial asociada a muchos libros.
+- `Socio`: persona que puede pedir libros prestados.
+- `FichaLibro`: información adicional única de un libro.
+- `Prestamo`: modelo intermedio entre `Libro` y `Socio`.
+
+La relación 1:1 es `Libro -> FichaLibro`, con `OneToOneField`,
+`related_name="ficha"` y eliminación en cascada. La relación 1:N es
+`Editorial -> Libro`, con `ForeignKey`, `related_name="libros"` y
+`SET_NULL` para conservar el libro si se elimina una editorial. La relación
+N:M es `Libro <-> Socio`, declarada con `ManyToManyField(through="Prestamo")`.
+`Prestamo` almacena `fecha_prestamo`, `fecha_devolucion` y `estado`.
+
+## Consultas optimizadas y CRUD
+
+- `/library/relaciones/select/` demuestra `select_related()` para editorial y ficha.
+- `/library/relaciones/prefetch/` demuestra `prefetch_related()` para socios y préstamos.
+- `/library/relaciones/` lista los préstamos.
+- `/library/relaciones/crear/` crea un préstamo.
+- `/library/relaciones/editar/<id>/` edita un préstamo.
+- `/library/relaciones/eliminar/<id>/` elimina un préstamo.
+
+Los modelos nuevos están registrados en Django Admin. La migración `0003`
+crea las tablas y relaciones, y `0004` carga datos demostrativos sin borrar
+datos existentes.
+
+## Estructura y flujo MVT
+
+La lógica se encuentra en `src/library/`, con modelos en `models.py`,
+formularios en `forms.py`, vistas en `views.py`, rutas en `urls.py` y
+plantillas en `templates/library/`. El flujo es Request -> URL -> View -> ORM
+-> SQLite -> Context -> Template -> Response.
+
+Para comprobar el proyecto:
+
+```powershell
+python manage.py check
+python manage.py makemigrations
+python manage.py migrate
+python manage.py showmigrations
+python manage.py test
+```
+
+---
+
 ## Capturas de evidencia
 
 Para demostrar el funcionamiento de la aplicación se deben realizar capturas de pantalla.

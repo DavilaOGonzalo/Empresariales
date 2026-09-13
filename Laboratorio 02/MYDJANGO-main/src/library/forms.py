@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import Libro
+from .models import Libro, Prestamo
 
 
 class LibroForm(forms.ModelForm):
@@ -15,4 +15,19 @@ class LibroForm(forms.ModelForm):
             "autor": forms.TextInput(attrs={"class": "form-input", "placeholder": "Ingrese el nombre del autor"}),
             "categoria": forms.TextInput(attrs={"class": "form-input", "placeholder": "Ingrese la categoria"}),
             "disponible": forms.CheckboxInput(attrs={"class": "form-checkbox"}),
+        }
+
+
+class PrestamoForm(forms.ModelForm):
+    """Formulario para administrar la relación entre libros y socios."""
+
+    class Meta:
+        model = Prestamo
+        fields = ["libro", "socio", "fecha_prestamo", "fecha_devolucion", "estado"]
+        widgets = {
+            "fecha_prestamo": forms.DateInput(attrs={"type": "date", "class": "form-input"}),
+            "fecha_devolucion": forms.DateInput(attrs={"type": "date", "class": "form-input"}),
+            "estado": forms.TextInput(attrs={"class": "form-input"}),
+            "libro": forms.Select(attrs={"class": "form-input"}),
+            "socio": forms.Select(attrs={"class": "form-input"}),
         }

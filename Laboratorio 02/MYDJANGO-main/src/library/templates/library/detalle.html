@@ -41,6 +41,33 @@
                 {% endif %}
             </span>
         </div>
+
+        <div class="detail-row">
+            <span class="label">Editorial:</span>
+            <span class="value">{{ libro.editorial|default:"Sin editorial" }}</span>
+        </div>
+
+        <div class="detail-row">
+            <span class="label">Ficha:</span>
+            <span class="value">
+                {% if libro.ficha %}
+                    {{ libro.ficha.ubicacion|default:"Sin ubicación" }}
+                {% else %}
+                    Sin ficha registrada
+                {% endif %}
+            </span>
+        </div>
+
+        <div class="detail-row">
+            <span class="label">Socios relacionados:</span>
+            <span class="value">
+                {% for socio in libro.socios.all %}
+                    {{ socio.nombre }}{% if not forloop.last %}, {% endif %}
+                {% empty %}
+                    Ninguno
+                {% endfor %}
+            </span>
+        </div>
     </div>
 
     <div class="detail-actions">
@@ -61,6 +88,9 @@
         
         <a href="{% url 'eliminar_libro' libro.id %}" class="btn btn-danger">
             Eliminar
+        </a>
+        <a href="{% url 'crear_ficha_libro' libro.id %}" class="btn btn-primary">
+            Editar ficha 1:1
         </a>
     </div>
 </div>

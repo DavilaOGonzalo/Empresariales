@@ -52,3 +52,11 @@ libros = [
 
 Los registros agregados durante la ejecucion se perdian al reiniciar el
 servidor porque la lista no se guardaba en una base de datos.
+
+## Actualizacion Semana 4
+
+La version vigente conserva `Libro` como modelo principal, pero ahora usa
+SQLite y Django ORM. La evidencia actual debe mostrar `src/library/models.py`
+con las relaciones `OneToOneField`, `ForeignKey` y `ManyToManyField` mediante
+`Prestamo`. La captura debe incluir los modelos reales de la biblioteca, no
+las entidades genericas del enunciado.

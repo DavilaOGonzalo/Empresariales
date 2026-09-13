@@ -1,7 +1,7 @@
 from django.shortcuts import get_object_or_404, redirect, render
 
-from .forms import LibroForm
-from .models import Libro
+from .forms import LibroForm, PrestamoForm
+from .models import FichaLibro, Libro, Prestamo
 
 
 def lista_libros(request):
@@ -72,3 +72,73 @@ def actualizar_disponibilidad(request, libro_id):
         libro.save(update_fields=["disponible"])
         return redirect("detalle_libro", libro_id=libro.id)
     return render(request, "library/actualizar_disponibilidad.html", {"libro": libro})
+
+
+def relaciones_select(request):
+    """Muestra relaciones directas optimizadas con INNER JOIN."""
+    libros = Libro.objects.select_related("editorial", "ficha").all()
+    return render(request, "library/relaciones.html", {
+        "modo": "select",
+        "libros": libros,
+    })
+
+
+def relaciones_prefetch(request):
+    """Muestra la relación N:M y la relación reversa con prefetch."""
+    libros = Libro.objects.prefetch_related("socios", "prestamos__socio").all()
+    return render(request, "library/relaciones.html", {
+        "modo": "prefetch",
+        "libros": libros,
+    })
+
+
+def lista_prestamos(request):
+    prestamos = Prestamo.objects.select_related("libro", "socio").all()
+    return render(request, "library/relaciones_lista.html", {"prestamos": prestamos})
+
+
+def crear_prestamo(request):
+    if request.method == "POST":
+        form = PrestamoForm(request.POST)
+        if form.is_valid():
+            prestamo = form.save()
+            prestamo.libro.disponible = False
+            prestamo.libro.save(update_fields=["disponible"])
+            return redirect("lista_prestamos")
+    else:
+        form = PrestamoForm()
+    return render(request, "library/prestamo_form.html", {"form": form, "titulo": "Registrar préstamo"})
+
+
+def editar_prestamo(request, prestamo_id):
+    prestamo = get_object_or_404(Prestamo, pk=prestamo_id)
+    if request.method == "POST":
+        form = PrestamoForm(request.POST, instance=prestamo)
+        if form.is_valid():
+            form.save()
+            return redirect("lista_prestamos")
+    else:
+        form = PrestamoForm(instance=prestamo)
+    return render(request, "library/prestamo_form.html", {"form": form, "titulo": "Editar préstamo"})
+
+
+def eliminar_prestamo(request, prestamo_id):
+    prestamo = get_object_or_404(Prestamo, pk=prestamo_id)
+    if request.method == "POST":
+        libro = prestamo.libro
+        prestamo.delete()
+        libro.disponible = True
+        libro.save(update_fields=["disponible"])
+        return redirect("lista_prestamos")
+    return render(request, "library/prestamo_eliminar.html", {"prestamo": prestamo})
+
+
+def crear_ficha_libro(request, libro_id):
+    libro = get_object_or_404(Libro, pk=libro_id)
+    ficha, _ = FichaLibro.objects.get_or_create(libro=libro)
+    if request.method == "POST":
+        ficha.resumen = request.POST.get("resumen", "")
+        ficha.ubicacion = request.POST.get("ubicacion", "")
+        ficha.save()
+        return redirect("detalle_libro", libro_id=libro.id)
+    return render(request, "library/ficha_form.html", {"libro": libro, "ficha": ficha})

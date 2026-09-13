@@ -12,9 +12,13 @@
         <div class="container header-inner">
             <div>
                 <p class="eyebrow">Django</p>
-                <h1>Gestión de Items</h1>
+                <h1>Biblioteca empresarial</h1>
             </div>
-            <a class="header-link" href="/admin/" target="_blank" rel="noopener noreferrer">Admin</a>
+            <nav class="header-actions">
+                <a class="header-link" href="{% url 'lista_libros' %}">Libros</a>
+                <a class="header-link" href="{% url 'relaciones_select' %}">Relaciones</a>
+                <a class="header-link" href="/admin/" target="_blank" rel="noopener noreferrer">Admin</a>
+            </nav>
         </div>
     </header>
 

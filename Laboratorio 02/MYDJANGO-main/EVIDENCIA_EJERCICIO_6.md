@@ -164,3 +164,15 @@ Creación: POST → URL → View → LibroForm / Libro.save() → ORM → SQLite
 ```
 
 Este recorrido implementa el patrón MVT de Django: el modelo representa los datos persistentes, la vista coordina la lógica y el contexto, y el template presenta el resultado al usuario.
+
+## Evidencias de Semana 4
+
+Para las capturas nuevas se debe observar:
+
+1. `library/migrations/0003_...py` y `0004_...py` creadas y aplicadas.
+2. `/library/relaciones/select/` mostrando editorial y ficha 1:1.
+3. `/library/relaciones/prefetch/` mostrando socios relacionados mediante préstamos.
+4. `/library/relaciones/` mostrando el CRUD del modelo intermedio `Prestamo`.
+5. `/admin/` mostrando `Editorial`, `Socio`, `FichaLibro`, `Libro` y `Prestamo`.
+
+No se incluyen capturas inventadas; deben tomarse con la aplicación en ejecución.
