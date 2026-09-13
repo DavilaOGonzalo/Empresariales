@@ -818,6 +818,31 @@ python manage.py runserver
 La aplicación está disponible en `http://127.0.0.1:8000/library/` y el panel
 administrativo en `http://127.0.0.1:8000/admin/`.
 
+## Acceso al panel Admin
+
+La base de datos no incluye una contraseña predeterminada. Para crear el
+usuario administrador, ejecutar desde `src/`:
+
+```powershell
+python manage.py createsuperuser
+```
+
+El comando solicitará un nombre de usuario, correo electrónico y contraseña.
+Después, iniciar el servidor y abrir:
+
+```text
+http://127.0.0.1:8000/admin/
+```
+
+Si se olvida la contraseña, se puede cambiar con:
+
+```powershell
+python manage.py changepassword <usuario>
+```
+
+Las credenciales son locales y no deben escribirse en este README ni
+subirse al repositorio.
+
 ## Entidades y relaciones
 
 - `Libro`: título, autor, categoría, disponibilidad, editorial y préstamos.
