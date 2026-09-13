@@ -4,7 +4,6 @@ Aplicación web para administrar una biblioteca utilizando Django 5, Python,
 SQLite, HTML y CSS. Esta versión implementa relaciones entre modelos mediante
 el ORM de Django y conserva el CRUD de libros.
 
-=======
 ## Información general
 
 **Curso:** Desarrollo de Aplicaciones Empresariales <br>
