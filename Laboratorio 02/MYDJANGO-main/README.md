@@ -4,6 +4,19 @@ Aplicación web para administrar una biblioteca utilizando Django 5, Python,
 SQLite, HTML y CSS. Esta versión implementa relaciones entre modelos mediante
 el ORM de Django y conserva el CRUD de libros.
 
+=======
+## Información general
+
+**Curso:** Desarrollo de Aplicaciones Empresariales <br>
+**Integrantes:** Gonzalo Davila y Pedro Suarez  
+**Laboratorio:** 02 — Clases, atributos y métodos  
+**Tecnología:** Python 3.10+, Django 5, Visual Studio Code y GitHub  
+**Problemática:** Consulta y registro de libros de una biblioteca.
+
+# PROGRAMA EN FUNCIONAMIENTO
+
+![alt text](image.png)
+
 ## Objetivo
 
 Implementar relaciones 1:1, 1:N y N:M en la aplicación `library`, incluyendo
