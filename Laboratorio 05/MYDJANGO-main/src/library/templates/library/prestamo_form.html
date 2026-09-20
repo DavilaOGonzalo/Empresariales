@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<style>
+    @import url('{% static "library/css/style.css" %}');
+</style>
+
+<h2>{{ titulo }}</h2>
+<form method="post" class="form-container">
+    {% csrf_token %}
+    {{ form.as_p }}
+    {% if form.non_field_errors %}
+        <div class="error-list">{{ form.non_field_errors }}</div>
+    {% endif %}
+    <div class="form-actions">
+        <button type="submit" class="btn btn-success">Guardar</button>
+        <a href="{% url 'lista_prestamos' %}" class="btn btn-secondary">Cancelar</a>
+    </div>
+</form>
+{% endblock %}

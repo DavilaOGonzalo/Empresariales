@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Relaciones entre modelos{% endblock %}
+
+{% block content %}
+<style>
+    @import url('{% static "library/css/style.css" %}');
+</style>
+
+<div class="panel">
+    <h2>{% if modo == "select" %}select_related(): relaciones directas{% else %}prefetch_related(): relaciones N:M{% endif %}</h2>
+    <p class="muted">
+        {% if modo == "select" %}
+            Consulta optimizada de editorial (1:N) y ficha del libro (1:1).
+        {% else %}
+            Consulta optimizada de socios relacionados mediante préstamos.
+        {% endif %}
+    </p>
+
+    {% for libro in libros %}
+        <article class="book-info">
+            <h3>{{ libro.titulo }}</h3>
+            <p><strong>Autor:</strong> {{ libro.autor }}</p>
+            {% if modo == "select" %}
+                <p><strong>Editorial:</strong> {{ libro.editorial|default:"Sin editorial" }}</p>
+                <p><strong>Ficha 1:1:</strong> {{ libro.ficha|default:"Sin ficha registrada" }}</p>
+                {% if libro.ficha %}
+                    <p><strong>Ubicación:</strong> {{ libro.ficha.ubicacion|default:"No definida" }}</p>
+                {% endif %}
+            {% else %}
+                <p><strong>Socios con préstamos:</strong></p>
+                <ul>
+                    {% for socio in libro.socios.all %}
+                        <li>{{ socio.nombre }} ({{ socio.correo }})</li>
+                    {% empty %}
+                        <li>No hay socios relacionados.</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </article>
+    {% empty %}
+        <p>No existen libros registrados.</p>
+    {% endfor %}
+</div>
+
+<nav class="detail-actions">
+    <a href="{% url 'relaciones_select' %}" class="btn btn-info">Ver 1:1 y 1:N</a>
+    <a href="{% url 'relaciones_prefetch' %}" class="btn btn-primary">Ver N:M</a>
+    <a href="{% url 'lista_prestamos' %}" class="btn btn-success">Administrar préstamos</a>
+</nav>
+{% endblock %}
