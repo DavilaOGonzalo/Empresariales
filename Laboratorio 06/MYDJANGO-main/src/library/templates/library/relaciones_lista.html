@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Préstamos{% endblock %}
+
+{% block content %}
+<style>
+    @import url('{% static "library/css/style.css" %}');
+</style>
+
+<div class="panel">
+    <div class="panel-header">
+        <div>
+            <p class="eyebrow">Modelo intermedio</p>
+            <h2>Préstamos registrados</h2>
+        </div>
+        <a href="{% url 'crear_prestamo' %}" class="btn btn-success">Nuevo préstamo</a>
+    </div>
+
+    {% if prestamos %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Libro</th>
+                    <th>Socio</th>
+                    <th>Préstamo</th>
+                    <th>Devolución</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for prestamo in prestamos %}
+                    <tr>
+                        <td>{{ prestamo.libro.titulo }}</td>
+                        <td>{{ prestamo.socio.nombre }}</td>
+                        <td>{{ prestamo.fecha_prestamo }}</td>
+                        <td>{{ prestamo.fecha_devolucion|default:"Pendiente" }}</td>
+                        <td>{{ prestamo.estado }}</td>
+                        <td class="actions">
+                            <a href="{% url 'editar_prestamo' prestamo.id %}" class="btn btn-small btn-warning">Editar</a>
+                            <a href="{% url 'eliminar_prestamo' prestamo.id %}" class="btn btn-small btn-danger">Eliminar</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="no-results">No existen préstamos registrados.</p>
+    {% endif %}
+</div>
+
+<a href="{% url 'lista_libros' %}" class="btn btn-secondary">Volver a libros</a>
+{% endblock %}

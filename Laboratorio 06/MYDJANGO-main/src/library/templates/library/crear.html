@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+
+<style>
+    @import url('{% static "library/css/style.css" %}');
+</style>
+
+<h1>Registrar nuevo libro</h1>
+
+{% include "library/_form_libro.html" with boton_texto="Registrar libro" %}
+
+<a href="{% url 'lista_libros' %}" class="btn btn-secondary">
+    Volver al listado
+</a>
+
+{% endblock %}

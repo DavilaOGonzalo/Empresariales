@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+
+<style>
+    @import url('{% static "library/css/style.css" %}');
+</style>
+
+<h1>Editar libro: {{ libro.titulo }}</h1>
+
+{% include "library/_form_libro.html" with boton_texto="Guardar cambios" %}
+
+<a href="{% url 'detalle_libro' libro.id %}" class="btn btn-secondary">
+    Cancelar
+</a>
+
+{% endblock %}

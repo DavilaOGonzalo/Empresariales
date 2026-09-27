@@ -1,0 +1,8 @@
+<p><strong>Socios con préstamos:</strong></p>
+<ul>
+    {% for socio in libro.socios.all %}
+        <li>{{ socio.nombre }} ({{ socio.correo }})</li>
+    {% empty %}
+        <li>No hay socios relacionados.</li>
+    {% endfor %}
+</ul>
