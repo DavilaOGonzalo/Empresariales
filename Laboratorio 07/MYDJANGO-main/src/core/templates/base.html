@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Gestión de Items{% endblock %}</title>
+    <title>{% block title %}Biblioteca{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'core/css/style.css' %}">
 </head>
 <body>
@@ -16,10 +16,8 @@
             </div>
             <nav class="header-actions">
                 <a class="header-link" href="{% url 'lista_libros' %}">Libros</a>
-                <a class="header-link" href="{% url 'relaciones_select' %}">Relaciones</a>
+                <a class="header-link" href="{% url 'lista_prestamos' %}">Préstamos</a>
                 <a class="header-link" href="{% url 'reportes' %}">Reportes</a>
-                <a class="header-link" href="{% url 'medir_consultas_relaciones' %}">Consultas ORM</a>
-                <a class="header-link" href="/admin/" target="_blank" rel="noopener noreferrer">Admin</a>
             </nav>
         </div>
     </header>

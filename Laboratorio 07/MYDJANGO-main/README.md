@@ -927,8 +927,7 @@ python manage.py runserver
 |---|---|
 | `http://127.0.0.1:8000/` | Andamiaje de la aplicación `core` |
 | `http://127.0.0.1:8000/library/` | Listado de libros (aplicación web) |
-| `http://127.0.0.1:8000/library/reportes/` | Reportes con `aggregate()`, `annotate()` y agrupación por estado |
-| `http://127.0.0.1:8000/library/consultas/` | Comparación medida de consultas N+1 y `select_related()` |
+| `http://127.0.0.1:8000/library/reportes/` | Resumen de préstamos, actividad por libro y estado |
 | `http://127.0.0.1:8000/library/relaciones/select/` | Relaciones 1:1 y 1:N |
 | `http://127.0.0.1:8000/library/relaciones/prefetch/` | Relaciones N:M |
 | `http://127.0.0.1:8000/admin/` | Panel de administración de Django |
@@ -1007,79 +1006,17 @@ Dentro de ese repositorio, este proyecto se encuentra en la carpeta
    ejecutar las pruebas automáticas, permitió confirmar que la reorganización no
    alteró el funcionamiento de la aplicación.
 
-### Del Laboratorio 07
+### Funcionalidad añadida
 
-1. **Equivalencias del dominio.** Libro es la entidad principal; su inventario
-   descontable es `Libro.existencias`, el estado es `Prestamo.estado` y los
-   atributos numéricos del modelo intermedio son `Prestamo.cantidad` y
-   `Prestamo.monto`. Editorial–Libro implementa 1:N, FichaLibro–Libro implementa
-   1:1 y Libro–Socio se implementa mediante Prestamo (N:M con modelo intermedio).
-   La investigación de esta entrega reutiliza estas entidades existentes; no se
-   inventa un segundo dominio de siete modelos que no está en el repositorio.
-2. **Operación atómica.** Registrar un préstamo activo guarda el registro
-   `Prestamo` y descuenta `Libro.existencias` con `F()`, dentro de
-   `transaction.atomic()`. La actualización condicional exige existencias
-   suficientes. Si falla, se lanza un error de validación y la transacción revierte
-   también el préstamo recién guardado. Editar y eliminar préstamos ajusta el
-   inventario en la misma transacción. Los envíos correctos redirigen mediante
-   Post/Redirect/Get; los insuficientes muestran el error en el formulario.
-3. **Datos para el Admin y reportes.** Las migraciones dejan cinco libros, al
-   menos tres editoriales, cinco socios, fichas asociadas y ocho préstamos con
-   estados, cantidades y montos variados. Se ven en `/admin/` después de crear un
-   superusuario. La migración `0005` incorpora `existencias`, `cantidad` y
-   `monto`; `0006` completa los datos de demostración.
-4. **`aggregate()` y `annotate()`.** `/library/reportes/` muestra el total global
-   de `cantidad * monto` y de ejemplares con `aggregate()`, importes y préstamos
-   por libro con `annotate()`, y totales agrupados por estado con
-   `values("estado").annotate(...)`, ordenados por cantidad descendente. El total
-   global se muestra con el filtro `floatformat:2`. `aggregate()` devuelve un
-   diccionario porque ejecuta la agregación y reduce todo el conjunto a valores
-   escalares; no devuelve una colección de filas que pueda seguir filtrándose como
-   un QuerySet.
-
-   Para inspeccionar el diccionario desde el shell:
-
-   ```python
-   from django.db.models import DecimalField, ExpressionWrapper, F, Sum
-   from library.models import Prestamo
-
-   importe = ExpressionWrapper(
-       F("cantidad") * F("monto"),
-       output_field=DecimalField(max_digits=12, decimal_places=2),
-   )
-   print(Prestamo.objects.aggregate(
-       total=Sum(importe, default=0),
-       ejemplares=Sum("cantidad", default=0),
-   ))
-   # Datos de demostración: {'total': Decimal('12.5'), 'ejemplares': 10}
-   ```
-   En los datos de muestra, `annotate(Count("prestamos"))` ordenado de mayor a
-   menor devuelve: Cien años de soledad (2), Don Quijote (2), El principito (2),
-   1984 (1) y Orgullo y prejuicio (1). La agrupación
-   `Prestamo.objects.values("estado").annotate(total=Count("id"))` devuelve
-   Activo (4) y Devuelto (4), ordenados por cantidad.
-5. **QuerySet de negocio.** `LibroQuerySet.as_manager()` ofrece los filtros
-   encadenables `con_existencias()` y `por_categoria(categoria)`. El listado de
-   libros aplica `por_categoria()` y la página de reportes usa
-   `con_existencias()`. Por ejemplo:
-   `Libro.objects.con_existencias().por_categoria("Tecnologia")`.
-6. **Optimización y medición.** `/library/consultas/` mide las consultas SQL
-   ejecutadas al recorrer libros y acceder a editorial y ficha, antes y después
-   de `select_related("editorial", "ficha")`; las cifras se miden en la propia
-   base actual, no se hardcodean. En los datos iniciales el acceso no optimizado
-   genera una consulta inicial más consultas por cada relación, mientras que
-   `select_related()` obtiene ambas relaciones en un JOIN. Para listas o relaciones
-   inversas y N:M se usa `prefetch_related()`, que realiza consultas adicionales
-   por relación y asocia los resultados en memoria. Con las cinco fichas y
-   editoriales de muestra, la ruta registró **11 consultas antes y 1 después**.
-7. **Validación funcional.** Ejecutar desde `src`:
-
-   ```powershell
-   python manage.py check
-   python manage.py test library
-   ```
-
-   Las pruebas cubren CRUD, PRG, descuento y restitución de inventario, rollback
-   por insuficiencia, filtros encadenables, reportes y la reducción medida de
-   consultas. La base local de desarrollo conserva sus propios datos; las
-   migraciones y datos de muestra también se aplican al crear una base vacía.
+- El catálogo registra existencias disponibles por libro.
+- Los préstamos activos descuentan ejemplares de forma segura; al devolverlos o
+  cancelarlos, el inventario se actualiza automáticamente.
+- La pantalla de reportes presenta importes, ejemplares prestados y actividad
+  agrupada por libro y estado.
+- Las búsquedas del catálogo reutilizan filtros de negocio para mostrar libros
+  por disponibilidad y categoría.
+- La carga de relaciones del catálogo está optimizada. La reducción de consultas
+  se verifica en las pruebas automatizadas y no se expone como una pantalla para
+  los clientes.
+- Para verificar la aplicación desde `src`, ejecutar `python manage.py check` y
+  `python manage.py test library`.

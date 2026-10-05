@@ -1,3 +1,4 @@
+from django.db import connection, reset_queries
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
@@ -155,20 +156,37 @@ class RelacionesViewsTests(TestCase):
         self.assertEqual(self.libro.existencias, 1)
         self.assertEqual(destino.existencias, 0)
 
-    @override_settings(DEBUG=True)
-    def test_reportes_y_medicion_de_consultas_se_muestran(self):
+    def test_reportes_solo_muestran_informacion_de_negocio(self):
         reporte = self.client.get(reverse("reportes"))
         self.assertEqual(reporte.status_code, 200)
-        self.assertContains(reporte, "Resumen agrupado por estado")
-        self.assertContains(reporte, "Préstamos y montos por libro")
+        self.assertContains(reporte, "Actividad por estado")
+        self.assertContains(reporte, "Actividad por libro")
+        self.assertNotContains(reporte, "Ejercicios")
+        self.assertNotContains(reporte, "aggregate()")
+        self.assertNotContains(reporte, "annotate()")
 
-        medicion = self.client.get(reverse("medir_consultas_relaciones"))
-        self.assertEqual(medicion.status_code, 200)
-        self.assertContains(medicion, "Medición del problema N+1")
-        self.assertGreater(
-            medicion.context["consultas_sin_optimizar"],
-            medicion.context["consultas_optimizadas"],
+    @override_settings(DEBUG=True)
+    def test_select_related_reduce_consultas_sin_exponerlas_al_cliente(self):
+        def contar_consultas(queryset):
+            reset_queries()
+            for libro in queryset:
+                if libro.editorial_id:
+                    _ = libro.editorial.nombre
+                try:
+                    _ = libro.ficha.ubicacion
+                except FichaLibro.DoesNotExist:
+                    pass
+            return len(connection.queries)
+
+        consultas_sin_optimizar = contar_consultas(Libro.objects.all())
+        consultas_optimizadas = contar_consultas(
+            Libro.objects.select_related("editorial", "ficha")
         )
+
+        self.assertGreater(consultas_sin_optimizar, consultas_optimizadas)
+        listado = self.client.get(reverse("lista_libros"))
+        self.assertNotContains(listado, "Consultas ORM")
+        self.assertNotContains(listado, "SQL")
 
     def test_queryset_personalizado_permite_encadenar_filtros(self):
         self.assertIn(self.libro, Libro.objects.con_existencias().por_categoria("Tecnologia"))

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Reportes ORM{% endblock %}
+{% block title %}Reportes de la biblioteca{% endblock %}
 
 {% block content %}
 <style>
@@ -9,15 +9,14 @@
 </style>
 
 <section class="panel">
-    <p class="eyebrow">Ejercicios 4, 5, 6 y 11</p>
-    <h2>Reportes de préstamos</h2>
-    <p>Ejemplares actualmente disponibles: <strong>{{ libros_disponibles }}</strong></p>
-    <p>Importe total (aggregate): <strong>{{ total_general.total|floatformat:2 }}</strong></p>
-    <p>Ejemplares prestados (aggregate): <strong>{{ total_general.ejemplares }}</strong></p>
+    <h2>Resumen de préstamos</h2>
+    <p>Ejemplares disponibles: <strong>{{ existencias_disponibles }}</strong></p>
+    <p>Importe total: <strong>{{ total_general.total|floatformat:2 }}</strong></p>
+    <p>Ejemplares prestados: <strong>{{ total_general.ejemplares }}</strong></p>
 </section>
 
 <section class="panel">
-    <h2>Préstamos y montos por libro (annotate)</h2>
+    <h2>Actividad por libro</h2>
     <table class="table">
         <thead>
             <tr><th>Libro</th><th>Préstamos</th><th>Ejemplares</th><th>Monto</th></tr>
@@ -38,7 +37,7 @@
 </section>
 
 <section class="panel">
-    <h2>Resumen agrupado por estado (values + annotate)</h2>
+    <h2>Actividad por estado</h2>
     <table class="table">
         <thead>
             <tr><th>Estado</th><th>Préstamos</th><th>Ejemplares</th><th>Monto</th></tr>

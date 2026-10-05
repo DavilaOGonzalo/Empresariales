@@ -1,7 +1,7 @@
 from decimal import Decimal
 
 from django.core.exceptions import ValidationError
-from django.db import connection, reset_queries, transaction
+from django.db import transaction
 from django.db.models import (
     BooleanField,
     Case,
@@ -242,33 +242,8 @@ def reportes(request):
             "total_general": total_general,
             "libros_reportados": libros_reportados,
             "estados": estados,
-            "libros_disponibles": Libro.objects.con_existencias().count(),
-        },
-    )
-
-
-def medir_consultas_relaciones(request):
-    def medir(queryset):
-        reset_queries()
-        for libro in queryset:
-            if libro.editorial_id:
-                _ = libro.editorial.nombre
-            try:
-                _ = libro.ficha.ubicacion
-            except FichaLibro.DoesNotExist:
-                pass
-        return len(connection.queries)
-
-    consultas_sin_optimizar = medir(Libro.objects.all())
-    consultas_optimizadas = medir(
-        Libro.objects.select_related("editorial", "ficha")
-    )
-    return render(
-        request,
-        "library/consultas.html",
-        {
-            "consultas_sin_optimizar": consultas_sin_optimizar,
-            "consultas_optimizadas": consultas_optimizadas,
-            "libros": Libro.objects.con_existencias().count(),
+            "existencias_disponibles": Libro.objects.con_existencias().aggregate(
+                total=Sum("existencias", default=0)
+            )["total"],
         },
     )
