@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Eliminar préstamo{% endblock %}
+
+{% block content %}
+<style>
+    @import url('{% static "library/css/style.css" %}');
+</style>
+
+<div class="confirmation-container">
+    <h2>Eliminar préstamo</h2>
+    <p>¿Desea eliminar el préstamo de <strong>{{ prestamo.libro.titulo }}</strong> para {{ prestamo.socio.nombre }}?</p>
+    <form method="post" class="confirmation-actions">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Sí, eliminar</button>
+        <a href="{% url 'lista_prestamos' %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+{% endblock %}

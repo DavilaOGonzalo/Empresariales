@@ -1,0 +1,8 @@
+<h2>{% if modo == "select" %}select_related(): relaciones directas{% else %}prefetch_related(): relaciones N:M{% endif %}</h2>
+<p class="muted">
+    {% if modo == "select" %}
+        Consulta optimizada de editorial (1:N) y ficha del libro (1:1).
+    {% else %}
+        Consulta optimizada de socios relacionados mediante préstamos.
+    {% endif %}
+</p>

@@ -1,0 +1,5 @@
+<p><strong>Editorial:</strong> {{ libro.editorial|default:"Sin editorial" }}</p>
+<p><strong>Ficha 1:1:</strong> {{ libro.ficha|default:"Sin ficha registrada" }}</p>
+{% if libro.ficha %}
+    <p><strong>Ubicación:</strong> {{ libro.ficha.ubicacion|default:"No definida" }}</p>
+{% endif %}
