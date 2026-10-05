@@ -1020,3 +1020,26 @@ Dentro de ese repositorio, este proyecto se encuentra en la carpeta
   los clientes.
 - Para verificar la aplicación desde `src`, ejecutar `python manage.py check` y
   `python manage.py test library`.
+
+## Conclusiones finales
+
+1. El ORM de Django permitió ampliar el sistema de biblioteca aprovechando las
+   entidades y relaciones existentes. `Libro`, `Editorial`, `FichaLibro`, `Socio`
+   y `Prestamo` representan el dominio sin duplicar información.
+2. El registro de préstamos mantiene coordinados los datos del préstamo y el
+   inventario. Las transacciones y las expresiones `F()` permiten descontar
+   ejemplares de forma segura; si no hay existencias suficientes, los cambios se
+   revierten.
+3. Las agregaciones y anotaciones permiten consultar importes y cantidades de
+   ejemplares prestados de forma global, por libro y por estado. La página de
+   reportes presenta esos resultados con importes en soles.
+4. El QuerySet personalizado centraliza filtros reutilizables para encontrar
+   libros con existencias y filtrar el catálogo por categoría, manteniendo las
+   reglas de consulta cerca del modelo.
+5. La optimización de relaciones reduce consultas repetidas. En la medición con
+   los datos de prueba, el acceso a editoriales y fichas pasó de 11 consultas a 1
+   usando `select_related()`; `prefetch_related()` se utiliza para relaciones de
+   varios registros.
+6. Las pruebas automatizadas verifican el CRUD, los préstamos, el inventario, el
+   rollback ante errores y los reportes, contribuyendo a que la aplicación sea
+   más consistente, eficiente y confiable.
