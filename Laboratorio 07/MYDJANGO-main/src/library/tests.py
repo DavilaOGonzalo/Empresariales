@@ -159,11 +159,13 @@ class RelacionesViewsTests(TestCase):
     def test_reportes_solo_muestran_informacion_de_negocio(self):
         reporte = self.client.get(reverse("reportes"))
         self.assertEqual(reporte.status_code, 200)
+        self.assertContains(reporte, "S/. 12,50")
         self.assertContains(reporte, "Actividad por estado")
         self.assertContains(reporte, "Actividad por libro")
         self.assertNotContains(reporte, "Ejercicios")
         self.assertNotContains(reporte, "aggregate()")
         self.assertNotContains(reporte, "annotate()")
+        self.assertContains(self.client.get(reverse("lista_prestamos")), "S/.")
 
     @override_settings(DEBUG=True)
     def test_select_related_reduce_consultas_sin_exponerlas_al_cliente(self):
