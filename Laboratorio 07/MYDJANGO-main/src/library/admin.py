@@ -11,7 +11,7 @@ class FichaLibroInline(admin.StackedInline):
 
 class PrestamoInline(admin.TabularInline):
     model = Prestamo
-    fields = ("socio", "fecha_prestamo", "fecha_devolucion", "estado")
+    fields = ("socio", "fecha_prestamo", "fecha_devolucion", "estado", "cantidad", "monto")
     extra = 0
 
 
@@ -30,9 +30,10 @@ class SocioAdmin(admin.ModelAdmin):
 
 @admin.register(Libro)
 class LibroAdmin(admin.ModelAdmin):
-    list_display = ("titulo", "autor", "categoria", "disponible", "editorial")
-    list_filter = ("disponible", "categoria")
+    list_display = ("titulo", "autor", "categoria", "existencias", "disponible", "editorial")
+    list_filter = ("disponible", "categoria", "editorial")
     search_fields = ("titulo", "autor", "categoria")
+    readonly_fields = ("disponible",)
     inlines = [FichaLibroInline, PrestamoInline]
 
 
@@ -44,6 +45,6 @@ class FichaLibroAdmin(admin.ModelAdmin):
 
 @admin.register(Prestamo)
 class PrestamoAdmin(admin.ModelAdmin):
-    list_display = ("libro", "socio", "fecha_prestamo", "fecha_devolucion", "estado")
+    list_display = ("libro", "socio", "fecha_prestamo", "fecha_devolucion", "estado", "cantidad", "monto")
     search_fields = ("libro__titulo", "socio__nombre")
     list_filter = ("estado", "fecha_prestamo")

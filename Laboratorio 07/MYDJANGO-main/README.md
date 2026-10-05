@@ -21,6 +21,7 @@ El proyecto reúne los trabajos de dos laboratorios:
 |---|---|---|
 | **Laboratorio 05** | Django Admin | Definición de los modelos y configuración del panel administrativo |
 | **Laboratorio 06** | Refactorización y seguridad de Templates | Organización, reutilización y verificación de las plantillas HTML |
+| **Laboratorio 07** | ORM avanzado | Inventario transaccional, reportes agregados, QuerySet personalizado y optimización N+1 |
 
 ---
 
@@ -56,17 +57,14 @@ El proyecto reúne los trabajos de dos laboratorios:
 
 | Tecnología | Versión / detalle |
 |---|---|
-| Python | 3.13 |
-| Django | 5.2.13 |
+| Python | 3.10 o superior |
+| Django | 5.2.17 |
 | SQLite | Base de datos, configurada en `src/config/settings.py` |
 | HTML / CSS | Plantillas y estilos estáticos |
 | JavaScript | `core/static/core/js/app.js` (búsqueda en el andamiaje) |
 | Git y GitHub | Control de versiones |
 
-> **Nota sobre versiones:** `src/requirements.txt` fija `Django==5.2.13`, que es la
-> versión instalada y la que usa el proyecto. El `requirements.txt` de la raíz fija
-> `Django==5.2.17`. Si se desea reproducir exactamente el entorno del laboratorio,
-> instale desde `src/requirements.txt`.
+> Los archivos `requirements.txt` de la raíz y de `src/` fijan Django 5.2.17.
 
 ---
 
@@ -110,7 +108,7 @@ MYDJANGO-main/
         ├── urls.py
         ├── views.py
         ├── tests.py
-        ├── migrations/          # 0001 a 0004
+        ├── migrations/          # 0001 a 0006
         ├── static/library/css/style.css
         └── templates/library/
             ├── lista.html
@@ -124,6 +122,8 @@ MYDJANGO-main/
             ├── relaciones_lista.html
             ├── prestamo_form.html
             ├── prestamo_eliminar.html
+            ├── reporte.html
+            ├── consultas.html
             ├── item_list.html   # (en core)
             ├── _form_libro.html
             ├── _relaciones_encabezado.html
@@ -175,7 +175,8 @@ Entidad principal del sistema.
 | `titulo` | `CharField(max_length=200)` | |
 | `autor` | `CharField(max_length=150)` | |
 | `categoria` | `CharField(max_length=100)` | |
-| `disponible` | `BooleanField(default=True)` | Controla si está en préstamo |
+| `disponible` | `BooleanField(default=True)` | Indicador sincronizado con las existencias |
+| `existencias` | `PositiveIntegerField(default=5)` | Copias disponibles para prestar |
 | `editorial` | `ForeignKey(Editorial)` | Editorial del libro |
 | `socios` | `ManyToManyField(Socio)` | A través del modelo `Prestamo` |
 
@@ -201,13 +202,14 @@ guarda datos propios del préstamo.
 | `fecha_prestamo` | `DateField()` | Obligatoria |
 | `fecha_devolucion` | `DateField(null=True, blank=True)` | Vacío si sigue prestado |
 | `estado` | `CharField(max_length=30, default="Activo")` | |
+| `cantidad` | `PositiveIntegerField(default=1)` | Ejemplares incluidos en el préstamo |
+| `monto` | `DecimalField(max_digits=10, decimal_places=2)` | Importe por ejemplar para los reportes |
 
 ### Modelo auxiliar: `Item` (aplicación `core`)
 
 La aplicación `core` contiene un modelo `Item` con los campos `name`,
 `description` y `created_at`. **No forma parte de los cinco modelos de la
-investigación**: es el andamiaje que Django crea al iniciar el proyecto. El
-Laboratorio 06 no lo modifica.
+investigación**: es el andamiaje que Django crea al iniciar el proyecto.
 
 ---
 
@@ -325,8 +327,8 @@ Todas las rutas cuelgan del prefijo `/library/`.
 
 | Formulario | Modelo | Campos |
 |---|---|---|
-| `LibroForm` | `Libro` | `titulo`, `autor`, `categoria`, `disponible` |
-| `PrestamoForm` | `Prestamo` | `libro`, `socio`, `fecha_prestamo`, `fecha_devolucion`, `estado` |
+| `LibroForm` | `Libro` | `titulo`, `autor`, `categoria`, `existencias` |
+| `PrestamoForm` | `Prestamo` | `libro`, `socio`, `fecha_prestamo`, `fecha_devolucion`, `estado`, `cantidad`, `monto` |
 
 ---
 
@@ -361,8 +363,8 @@ asocia la clase de administración.
 ```python
 @admin.register(Libro)
 class LibroAdmin(admin.ModelAdmin):
-    list_display = ("titulo", "autor", "categoria", "disponible", "editorial")
-    list_filter = ("disponible", "categoria")
+    list_display = ("titulo", "autor", "categoria", "existencias", "disponible", "editorial")
+    list_filter = ("disponible", "categoria", "editorial")
     search_fields = ("titulo", "autor", "categoria")
     inlines = [FichaLibroInline, PrestamoInline]
 ```
@@ -375,9 +377,9 @@ Define qué columnas se muestran en la tabla de registros:
 |---|---|
 | `Editorial` | `nombre` |
 | `Socio` | `nombre`, `correo`, `activo` |
-| `Libro` | `titulo`, `autor`, `categoria`, `disponible`, `editorial` |
+| `Libro` | `titulo`, `autor`, `categoria`, `existencias`, `disponible`, `editorial` |
 | `FichaLibro` | `libro`, `ubicacion` |
-| `Prestamo` | `libro`, `socio`, `fecha_prestamo`, `fecha_devolucion`, `estado` |
+| `Prestamo` | `libro`, `socio`, `fecha_prestamo`, `fecha_devolucion`, `estado`, `cantidad`, `monto` |
 | `Item` | `name`, `created_at` |
 
 ### `search_fields`
@@ -401,7 +403,7 @@ Define los filtros laterales que se muestran a la derecha de la tabla:
 | Modelo | Filtros |
 |---|---|
 | `Socio` | `activo` |
-| `Libro` | `disponible`, `categoria` |
+| `Libro` | `disponible`, `categoria`, `editorial` |
 | `Prestamo` | `estado`, `fecha_prestamo` |
 
 `Editorial`, `FichaLibro` e `Item` no definen `list_filter`.
@@ -874,7 +876,7 @@ En la práctica se complementar: en `detalle.html` hay un enlace al panel, y
 
 ### Requisitos
 
-- Python 3.13 instalado.
+- Python 3.10 o superior instalado.
 - Acceso a una terminal en la carpeta del proyecto.
 
 ### Instalación
@@ -893,8 +895,8 @@ python manage.py migrate
 ```
 
 Las migraciones de la aplicación `library` cargan además datos de demostración:
-cinco libros en la migración `0002` y las relaciones de ejemplo (editoriales,
-socios, fichas y préstamos) en la migración `0004`.
+cinco libros en `0002`, las relaciones base en `0004` y existencias, fichas,
+editoriales, socios y ocho préstamos para los reportes en `0005` y `0006`.
 
 Para comprobar el estado de las migraciones:
 
@@ -925,6 +927,8 @@ python manage.py runserver
 |---|---|
 | `http://127.0.0.1:8000/` | Andamiaje de la aplicación `core` |
 | `http://127.0.0.1:8000/library/` | Listado de libros (aplicación web) |
+| `http://127.0.0.1:8000/library/reportes/` | Reportes con `aggregate()`, `annotate()` y agrupación por estado |
+| `http://127.0.0.1:8000/library/consultas/` | Comparación medida de consultas N+1 y `select_related()` |
 | `http://127.0.0.1:8000/library/relaciones/select/` | Relaciones 1:1 y 1:N |
 | `http://127.0.0.1:8000/library/relaciones/prefetch/` | Relaciones N:M |
 | `http://127.0.0.1:8000/admin/` | Panel de administración de Django |
@@ -944,7 +948,7 @@ tomarse con el servidor en ejecución. Las capturas requeridas son:
 6. `/admin/` mostrando los modelos registrados.
 
 Las evidencias deben mostrar la aplicación real y los datos de demostración
-cargados por la migración `0004`. Las capturas se toman con el servidor
+cargados por las migraciones `0004` y `0006`. Las capturas se toman con el servidor
 funcionando y se colocan junto a esa guía.
 
 En la raíz del proyecto se incluye además `image.png` y los documentos
@@ -962,7 +966,7 @@ https://github.com/DavilaOGonzalo/Empresariales.git
 ```
 
 Dentro de ese repositorio, este proyecto se encuentra en la carpeta
-`Laboratorio 06/MYDJANGO-main/`, junto a los demás laboratorios.
+`Laboratorio 07/MYDJANGO-main/`, junto a los demás laboratorios.
 
 ---
 
@@ -1002,3 +1006,80 @@ Dentro de ese repositorio, este proyecto se encuentra en la carpeta
    mismo. Comparar la respuesta de las páginas antes y después del cambio, y
    ejecutar las pruebas automáticas, permitió confirmar que la reorganización no
    alteró el funcionamiento de la aplicación.
+
+### Del Laboratorio 07
+
+1. **Equivalencias del dominio.** Libro es la entidad principal; su inventario
+   descontable es `Libro.existencias`, el estado es `Prestamo.estado` y los
+   atributos numéricos del modelo intermedio son `Prestamo.cantidad` y
+   `Prestamo.monto`. Editorial–Libro implementa 1:N, FichaLibro–Libro implementa
+   1:1 y Libro–Socio se implementa mediante Prestamo (N:M con modelo intermedio).
+   La investigación de esta entrega reutiliza estas entidades existentes; no se
+   inventa un segundo dominio de siete modelos que no está en el repositorio.
+2. **Operación atómica.** Registrar un préstamo activo guarda el registro
+   `Prestamo` y descuenta `Libro.existencias` con `F()`, dentro de
+   `transaction.atomic()`. La actualización condicional exige existencias
+   suficientes. Si falla, se lanza un error de validación y la transacción revierte
+   también el préstamo recién guardado. Editar y eliminar préstamos ajusta el
+   inventario en la misma transacción. Los envíos correctos redirigen mediante
+   Post/Redirect/Get; los insuficientes muestran el error en el formulario.
+3. **Datos para el Admin y reportes.** Las migraciones dejan cinco libros, al
+   menos tres editoriales, cinco socios, fichas asociadas y ocho préstamos con
+   estados, cantidades y montos variados. Se ven en `/admin/` después de crear un
+   superusuario. La migración `0005` incorpora `existencias`, `cantidad` y
+   `monto`; `0006` completa los datos de demostración.
+4. **`aggregate()` y `annotate()`.** `/library/reportes/` muestra el total global
+   de `cantidad * monto` y de ejemplares con `aggregate()`, importes y préstamos
+   por libro con `annotate()`, y totales agrupados por estado con
+   `values("estado").annotate(...)`, ordenados por cantidad descendente. El total
+   global se muestra con el filtro `floatformat:2`. `aggregate()` devuelve un
+   diccionario porque ejecuta la agregación y reduce todo el conjunto a valores
+   escalares; no devuelve una colección de filas que pueda seguir filtrándose como
+   un QuerySet.
+
+   Para inspeccionar el diccionario desde el shell:
+
+   ```python
+   from django.db.models import DecimalField, ExpressionWrapper, F, Sum
+   from library.models import Prestamo
+
+   importe = ExpressionWrapper(
+       F("cantidad") * F("monto"),
+       output_field=DecimalField(max_digits=12, decimal_places=2),
+   )
+   print(Prestamo.objects.aggregate(
+       total=Sum(importe, default=0),
+       ejemplares=Sum("cantidad", default=0),
+   ))
+   # Datos de demostración: {'total': Decimal('12.5'), 'ejemplares': 10}
+   ```
+   En los datos de muestra, `annotate(Count("prestamos"))` ordenado de mayor a
+   menor devuelve: Cien años de soledad (2), Don Quijote (2), El principito (2),
+   1984 (1) y Orgullo y prejuicio (1). La agrupación
+   `Prestamo.objects.values("estado").annotate(total=Count("id"))` devuelve
+   Activo (4) y Devuelto (4), ordenados por cantidad.
+5. **QuerySet de negocio.** `LibroQuerySet.as_manager()` ofrece los filtros
+   encadenables `con_existencias()` y `por_categoria(categoria)`. El listado de
+   libros aplica `por_categoria()` y la página de reportes usa
+   `con_existencias()`. Por ejemplo:
+   `Libro.objects.con_existencias().por_categoria("Tecnologia")`.
+6. **Optimización y medición.** `/library/consultas/` mide las consultas SQL
+   ejecutadas al recorrer libros y acceder a editorial y ficha, antes y después
+   de `select_related("editorial", "ficha")`; las cifras se miden en la propia
+   base actual, no se hardcodean. En los datos iniciales el acceso no optimizado
+   genera una consulta inicial más consultas por cada relación, mientras que
+   `select_related()` obtiene ambas relaciones en un JOIN. Para listas o relaciones
+   inversas y N:M se usa `prefetch_related()`, que realiza consultas adicionales
+   por relación y asocia los resultados en memoria. Con las cinco fichas y
+   editoriales de muestra, la ruta registró **11 consultas antes y 1 después**.
+7. **Validación funcional.** Ejecutar desde `src`:
+
+   ```powershell
+   python manage.py check
+   python manage.py test library
+   ```
+
+   Las pruebas cubren CRUD, PRG, descuento y restitución de inventario, rollback
+   por insuficiencia, filtros encadenables, reportes y la reducción medida de
+   consultas. La base local de desarrollo conserva sus propios datos; las
+   migraciones y datos de muestra también se aplican al crear una base vacía.

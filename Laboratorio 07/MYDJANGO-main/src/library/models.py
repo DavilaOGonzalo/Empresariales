@@ -1,4 +1,15 @@
 from django.db import models
+from django.db.models import QuerySet
+
+
+class LibroQuerySet(QuerySet):
+    def con_existencias(self):
+        return self.filter(existencias__gt=0)
+
+    def por_categoria(self, categoria):
+        if not categoria:
+            return self
+        return self.filter(categoria__iexact=categoria)
 
 
 class Editorial(models.Model):
@@ -30,6 +41,7 @@ class Libro(models.Model):
     autor = models.CharField(max_length=150)
     categoria = models.CharField(max_length=100)
     disponible = models.BooleanField(default=True)
+    existencias = models.PositiveIntegerField(default=5)
     editorial = models.ForeignKey(
         Editorial,
         on_delete=models.SET_NULL,
@@ -43,9 +55,17 @@ class Libro(models.Model):
         related_name="libros",
         blank=True,
     )
+    objects = LibroQuerySet.as_manager()
 
     class Meta:
         ordering = ["titulo"]
+
+    def save(self, *args, **kwargs):
+        self.disponible = self.existencias > 0
+        update_fields = kwargs.get("update_fields")
+        if update_fields is not None and "existencias" in update_fields:
+            kwargs["update_fields"] = set(update_fields) | {"disponible"}
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.titulo} - {self.autor}"
@@ -82,6 +102,8 @@ class Prestamo(models.Model):
     fecha_prestamo = models.DateField()
     fecha_devolucion = models.DateField(null=True, blank=True)
     estado = models.CharField(max_length=30, default="Activo")
+    cantidad = models.PositiveIntegerField(default=1)
+    monto = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     class Meta:
         ordering = ["-fecha_prestamo", "libro__titulo"]
